@@ -6,6 +6,7 @@ var _           = require('underscore'),
     Roda = require('./lib/roda.js');
 
 module.exports = function(path, options){
+  //default options
   options = _.extend({
 
   }, options, {
@@ -13,6 +14,7 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
+  //setup db
   if(!options.db) 
     options.db = require('leveldown');
 
@@ -25,6 +27,7 @@ module.exports = function(path, options){
 
   db = transaction(db);
 
+  //base API
   function base(name){
     map[name] = map[name] || new Roda(base, name);
     return map[name];
