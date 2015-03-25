@@ -3,6 +3,7 @@ var _           = require('underscore'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
 
+    util   = require('./lib/util.js'),
     Roda   = require('./lib/roda.js'),
     nodeId = require('./lib/nodeid.js');
 
@@ -36,6 +37,9 @@ module.exports = function(path, options){
   base.db = db;
   base.transaction = db.transaction;
   base.api = Roda.prototype;
+
+  //mixin util functions
+  _.extend(base, util);
 
   base.id = nodeId(db);
 
