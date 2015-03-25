@@ -24,7 +24,7 @@
     "node-uuid": "^1.4.2",
     "monotonic-timestamp": "0.0.9",
     "ginga": "^0.1.6",
-    "level-async-transaction": "0.0.7"
+    "level-async-transaction": "0.0.8"
   },
   "devDependencies": {
     "tape": "^3.0.2"

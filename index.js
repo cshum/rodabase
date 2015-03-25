@@ -27,6 +27,9 @@ module.exports = function(path, options){
 
   db = transaction(db);
 
+  //generate node id if not exists
+  var tx = db.transaction();
+
   //base API
   function base(name){
     map[name] = map[name] || new Roda(base, name);
