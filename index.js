@@ -3,7 +3,8 @@ var _           = require('underscore'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
 
-    Roda = require('./lib/roda.js');
+    Roda   = require('./lib/roda.js'),
+    nodeId = require('./lib/nodeid.js');
 
 module.exports = function(path, options){
   //default options
@@ -18,7 +19,7 @@ module.exports = function(path, options){
   if(!options.db) 
     options.db = require('leveldown');
 
-  var db, id, map = {};
+  var db, map = {};
 
   if(typeof options.db.sublevel === 'function')
     db = options.db.sublevel(path, options);
@@ -26,9 +27,6 @@ module.exports = function(path, options){
     db = sublevel( levelup(path, options) );
 
   db = transaction(db);
-
-  //generate node id if not exists
-  var tx = db.transaction();
 
   //base API
   function base(name){
@@ -38,6 +36,8 @@ module.exports = function(path, options){
   base.db = db;
   base.transaction = db.transaction;
   base.api = Roda.prototype;
+
+  base.id = nodeId(db);
 
   return base;
 };
