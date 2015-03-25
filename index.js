@@ -25,13 +25,13 @@ module.exports = function(path, options){
 
   db = transaction(db);
 
-  function Base(name){
-    map[name] = map[name] || new Roda(Base);
+  function base(name){
+    map[name] = map[name] || new Roda(base, name);
     return map[name];
   }
-  Base.db = db;
-  Base.transaction = db.transaction;
-  Base.api = Roda.prototype;
+  base.db = db;
+  base.transaction = db.transaction;
+  base.api = Roda.prototype;
 
-  return Base;
+  return base;
 };
