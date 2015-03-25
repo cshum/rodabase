@@ -3,9 +3,8 @@ var _           = require('underscore'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
 
-    util   = require('./lib/util.js'),
-    Roda   = require('./lib/roda.js'),
-    nodeId = require('./lib/nodeid.js');
+    nid    = require('./lib/nid'),
+    Roda   = require('./lib/roda');
 
 module.exports = function(path, options){
   //default options
@@ -41,7 +40,7 @@ module.exports = function(path, options){
   //mixin util functions
   _.extend(base, util);
 
-  base.id = nodeId(db);
+  //todo: generate node id
 
   return base;
 };
