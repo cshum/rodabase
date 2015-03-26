@@ -3,8 +3,7 @@ var _           = require('underscore'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
     udid        = require('./lib/udid'),
-
-    Roda   = require('./lib/roda');
+    Roda        = require('./lib/roda');
 
 module.exports = function(path, options){
   //default options
@@ -14,18 +13,14 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
-  //setup db
+  //leveldown by default
   if(!options.db) 
     options.db = require('leveldown');
 
   var db, id = options.id, rodas = {};
 
   //level-sublevel
-  if(typeof options.db.sublevel === 'function')
-    db = options.db.sublevel(path, options);
-  else
-    db = sublevel( levelup(path, options) );
-
+  db = sublevel( levelup(path, options) );
   //level-async-transaction
   db = transaction(db);
 
