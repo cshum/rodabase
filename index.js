@@ -3,13 +3,11 @@ var _           = require('underscore'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
 
-    nid    = require('./lib/nid'),
     Roda   = require('./lib/roda');
 
 module.exports = function(path, options){
   //default options
   options = _.extend({
-
   }, options, {
     keyEncoding: 'utf8',
     valueEncoding: 'json'
@@ -19,7 +17,7 @@ module.exports = function(path, options){
   if(!options.db) 
     options.db = require('leveldown');
 
-  var db, map = {};
+  var db, id = options.id, rodas = {};
 
   if(typeof options.db.sublevel === 'function')
     db = options.db.sublevel(path, options);
@@ -30,17 +28,17 @@ module.exports = function(path, options){
 
   //base API
   function base(name){
-    map[name] = map[name] || new Roda(base, name);
-    return map[name];
+    rodas[name] = rodas[name] || new Roda(base, name);
+    return rodas[name];
   }
   base.db = db;
   base.transaction = db.transaction;
   base.api = Roda.prototype;
 
-  //mixin util functions
-  _.extend(base, util);
-
   //todo: generate node id
+  base.id = function(){
+    return id;
+  };
 
   return base;
 };
