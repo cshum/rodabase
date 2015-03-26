@@ -2,6 +2,7 @@ var _           = require('underscore'),
     levelup     = require('levelup'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
+    udid        = require('./lib/udid'),
 
     Roda   = require('./lib/roda');
 
@@ -19,12 +20,20 @@ module.exports = function(path, options){
 
   var db, id = options.id, rodas = {};
 
+  //level-sublevel
   if(typeof options.db.sublevel === 'function')
     db = options.db.sublevel(path, options);
   else
     db = sublevel( levelup(path, options) );
 
+  //level-async-transaction
   db = transaction(db);
+
+  if(!id){
+    //todo: generate node id
+    //sync generate database udid
+    id = udid(path);
+  }
 
   //base API
   function base(name){
@@ -35,9 +44,6 @@ module.exports = function(path, options){
   base.transaction = db.transaction;
   base.api = Roda.prototype;
 
-  if(!id){
-    //todo: generate node id
-  }
   base.id = function(){
     return id;
   };
