@@ -2,7 +2,7 @@ var _           = require('underscore'),
     levelup     = require('levelup'),
     sublevel    = require('level-sublevel'),
     transaction = require('level-async-transaction'),
-    nid         = require('./lib/nid'),
+    mid         = require('./lib/mid'),
     Roda        = require('./lib/roda');
 
 module.exports = function(path, options){
@@ -25,8 +25,8 @@ module.exports = function(path, options){
   db = transaction(db);
 
   if(!id){
-    //generate node id
-    id = nid(path);
+    //generate mid
+    id = mid(path);
   }
 
   //base API
