@@ -35,7 +35,9 @@ module.exports = function(path, options){
   base.transaction = db.transaction;
   base.api = Roda.prototype;
 
-  //todo: generate node id
+  if(!id){
+    //todo: generate node id
+  }
   base.id = function(){
     return id;
   };
