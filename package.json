@@ -22,7 +22,8 @@
     "bytewise": "^0.7.1",
     "ginga": "^0.1.6",
     "level-async-transaction": "0.0.8",
-    "mkdirp": "^0.5.0"
+    "mkdirp": "^0.5.0",
+    "monotonic-timestamp": "0.0.9"
   },
   "devDependencies": {
     "tape": "^3.0.2"
