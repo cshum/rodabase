@@ -13,10 +13,6 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
-  //leveldown by default
-  if(!options.db) 
-    options.db = require('leveldown');
-
   var db, id = options.id, rodas = {};
 
   //level-sublevel

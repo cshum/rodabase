@@ -20,7 +20,6 @@
     "levelup": "^0.19.0",
     "level-sublevel": "^6.3.15",
     "bytewise": "^0.7.1",
-    "leveldown": "^1.0.0",
     "ginga": "^0.1.6",
     "level-async-transaction": "0.0.8",
     "mkdirp": "^0.5.0"
