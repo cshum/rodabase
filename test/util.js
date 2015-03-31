@@ -5,7 +5,7 @@ tape('en/decode Identity', function(t){
   function I(source){
     return util.decode(util.encode(source));
   }
-  for(var i = 0; i< 10;i++){
+  for(var i = 0; i < 10;i++){
     var v = Math.random();
     t.equal(v, I(v));
   }
