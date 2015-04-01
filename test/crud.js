@@ -9,9 +9,9 @@ var roda = rodabase('./test/data/crud.json', {
   db: jsondown
 });
 
-var n = 10;
+var n = 100;
 tape('Put '+ n +' increment', function(t){
-  t.plan(2 * n + 2);
+  t.plan(n + 2);
   var _id = '', _rev = '';
   var list = [];
   // roda('test').use('diff', function(ctx, next){
@@ -21,8 +21,7 @@ tape('Put '+ n +' increment', function(t){
     roda('test').put({
       i: i
     }, function(err, val){
-      t.notOk(err, 'no error');
-      t.ok(val, 'has value');
+      t.ok(!err && val, 'no error');
       list.push(val);
       if(val.i === n - 1){
         list = _.sortBy(list, 'i');
