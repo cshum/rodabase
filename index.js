@@ -13,7 +13,8 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
-  var db, id = options.id, rodas = {};
+  var db, id,
+      map = {};
 
   //level-sublevel
   db = sublevel( levelup(path, options) );
@@ -25,18 +26,17 @@ module.exports = function(path, options){
     id = mid(path);
   }
 
-  //base API
-  function base(name){
-    rodas[name] = rodas[name] || new Roda(base, name);
-    return rodas[name];
+  function app(name){
+    map[name] = map[name] || new Roda(app, name);
+    return map[name];
   }
-  base.db = db;
-  base.transaction = db.transaction;
-  base.api = Roda.prototype;
+  app.db = db;
+  app.transaction = db.transaction;
+  app.api = Roda.prototype;
 
-  base.id = function(){
+  app.id = function(){
     return id;
   };
 
-  return base;
+  return app;
 };
