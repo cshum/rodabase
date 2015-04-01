@@ -8,33 +8,18 @@ var roda = rodabase('./test/data/crud.json', {
   db: jsondown
 });
 
-/*
-tape('Put 10', function(t){
-  var tx = roda.transaction();
-  t.plan(2);
-  for(var i = 0; i < 10; i++)
-    roda('test').put({
-      i: i
-    }, tx, function(err, val){
-      console.log(val);
-    });
-  tx.commit(function(err){
-  });
-});
-*/
-
-tape('tx Put 10', function(t){
-  t.plan(2);
+tape('Put 10 increments', function(t){
+  t.plan(2 * 10);
+  var _id = '', _rev = '';
   for(var i = 0; i < 10; i++){
-    var tx = roda.transaction();
     roda('test2').put({
-      i: i
-    }, tx, function(err, val){
-      console.log(val);
+      i: Math.random()
+    }, function(err, val){
+      t.ok(val._id > _id, '_id increments');
+      t.ok(val._rev > _rev, '_rev increments');
+      _id = val._id;
+      _rev = val._rev;
     });
-    if(i === 9)
-      tx.commit(function(err){
-        console.log('done');
-      });
   }
 });
+
