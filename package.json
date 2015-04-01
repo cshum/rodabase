@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Embeddable, transactional JSON store buillt on LevelDB",
   "scripts": {
-    "test": "set -e; for t in test/*.js; do rm -rf test/data; node $t; done;"
+    "test": "set -e; rm -rf test/data; for t in test/*.js; do node $t; done;"
   },
   "repository": {
     "type": "git",
