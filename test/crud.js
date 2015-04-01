@@ -28,21 +28,23 @@ tape('Put tx read lock', function(t){
         k: (val ? val.k : 0) + 1
       }, tx);
 
-      tx.commit(function(err){
-        if(i === n - 1){
-          api.get('k', function(err, val){
-           t.ok(val);
-           t.equal(val.k, n, 'Tx incrememnt');
-          });
-        }
-      });
+      tx.commit();
     });
   }
   for(var i = 0; i < n; i++)
     run(i);
+
+  var tx = roda.transaction();
+
+  api.get('k', tx, function(err, val){
+    t.ok(val);
+    t.equal(val.k, n, 'Tx incrememnt');
+  });
+
+  tx.commit();
 });
 
-tape('Put '+ n +' increment', function(t){
+tape('Put increment', function(t){
   t.plan(2);
   var api = roda('t2');
   var _id = '', _rev = '';
