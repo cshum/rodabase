@@ -1,7 +1,7 @@
 var tape = require('tape');
 var util = require('../lib/util');
 
-tape('en/decode Identity', function(t){
+tape('Identity', function(t){
   function I(source){
     return util.decode(util.encode(source));
   }
