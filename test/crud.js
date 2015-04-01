@@ -10,19 +10,25 @@ var roda = rodabase('./test/data/crud.json', {
 });
 var n = 100;
 
-tape('Put tx increment', function(t){
+// roda.api.use('diff', function(ctx, next){
+//   setTimeout(next, 10);
+//   console.log(ctx.result);
+// });
+
+tape('Put tx read lock', function(t){
   var api = roda('t1');
-  // api.use('diff', function(ctx, next){
-  //   setTimeout(next, 50);
-  // });
-  t.plan(n + 2);
+
+  t.plan(2);
   function run(i){
     var tx = roda.transaction();
     api.get('k', tx, function(err, val){
-      console.log(val);
-      api.put('k', {k: (val ? val.k : 0) + 1}, tx);
+
+      api.put({
+        _id: 'k',
+        k: (val ? val.k : 0) + 1
+      }, tx);
+
       tx.commit(function(err){
-        t.notOk(err,'committed '+ i);
         if(i === n - 1){
           api.get('k', function(err, val){
            t.ok(val);
@@ -37,17 +43,13 @@ tape('Put tx increment', function(t){
 });
 
 tape('Put '+ n +' increment', function(t){
-  t.plan(n + 2);
+  t.plan(2);
+  var api = roda('t2');
   var _id = '', _rev = '';
   var list = [];
-  // roda('test').use('diff', function(ctx, next){
-  //   setTimeout(next, 100);
-  // });
-  for(var i = 0; i < n; i++){
-    roda('t2').put({
-      i: i
-    }, function(err, val){
-      t.ok(!err && val, 'no error');
+
+  for(var i = 0; i < n; i++)
+    api.put({ i: i }, function(err, val){
       list.push(val);
       if(val.i === n - 1){
         list = _.sortBy(list, 'i');
@@ -55,6 +57,5 @@ tape('Put '+ n +' increment', function(t){
         t.deepEqual(_.sortBy(list, '_rev'), list, '_rev incremental');
       }
     });
-  }
 });
 
