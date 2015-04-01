@@ -5,10 +5,12 @@ tape('Identity', function(t){
   function I(source){
     return util.decode(util.encode(source));
   }
+  var ok = true;
   for(var i = 0; i < 1000;i++){
     var v = Math.random();
-    t.equal(v, I(v));
+    ok &= v === I(v);
   }
+  t.ok(ok);
   t.end();
 });
 

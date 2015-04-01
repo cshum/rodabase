@@ -26,17 +26,17 @@ module.exports = function(path, options){
     id = mid(path);
   }
 
-  function app(name){
-    map[name] = map[name] || new Roda(app, name);
+  function base(name){
+    map[name] = map[name] || new Roda(base, name);
     return map[name];
   }
-  app.db = db;
-  app.transaction = db.transaction;
-  app.api = Roda.prototype;
+  base.db = db;
+  base.transaction = db.transaction;
+  base.api = Roda.prototype;
 
-  app.id = function(){
+  base.id = function(){
     return id;
   };
 
-  return app;
+  return base;
 };
