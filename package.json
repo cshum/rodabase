@@ -24,7 +24,8 @@
     "level-async-transaction": "0.0.10",
     "mkdirp": "^0.5.0",
     "monotonic-timestamp": "0.0.9",
-    "d64": "^1.0.0"
+    "d64": "^1.0.0",
+    "through": "^2.3.6"
   },
   "devDependencies": {
     "tape": "^3.0.2",
