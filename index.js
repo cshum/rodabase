@@ -32,7 +32,7 @@ module.exports = function(path, options){
   }
   base.db = db;
   base.transaction = db.transaction;
-  base.api = Roda.prototype;
+  base.all = Roda.prototype;
 
   base.id = function(){
     return id;

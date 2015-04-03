@@ -10,13 +10,15 @@ var roda = rodabase('./test/data/crud.json', {
 });
 var n = 100;
 
-// roda.api.use('diff', function(ctx, next){
+// roda.all.use('diff', function delay(ctx, next){
 //   setTimeout(next, 10);
 //   console.log(ctx.result);
 // });
 
 tape('Put tx read lock', function(t){
   var api = roda('t1');
+
+  console.log(api._hooks);
 
   t.plan(2);
   function run(i){
