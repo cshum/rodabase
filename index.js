@@ -13,18 +13,15 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
-  var db, id,
-      map = {};
+  var db, id, map = {};
 
   //level-sublevel
   db = sublevel( levelup(path, options) );
   //level-async-transaction
   db = transaction(db);
 
-  if(!id){
-    //generate mid
-    id = mid(path);
-  }
+  //generate mid
+  id = mid(path);
 
   function base(name){
     map[name] = map[name] || new Roda(base, name);
