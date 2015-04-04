@@ -23,17 +23,17 @@ module.exports = function(path, options){
   //generate mid
   id = mid(path);
 
-  function base(name){
-    map[name] = map[name] || new Roda(base, name);
+  function roda(name){
+    map[name] = map[name] || new Roda(roda, name);
     return map[name];
   }
-  base.db = db;
-  base.transaction = db.transaction;
-  base.all = Roda.prototype;
+  roda.db = db;
+  roda.transaction = db.transaction;
+  roda.base = Roda.prototype;
 
-  base.id = function(){
+  roda.id = function(){
     return id;
   };
 
-  return base;
+  return roda;
 };
