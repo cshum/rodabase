@@ -16,11 +16,13 @@ tape('Identity', function(t){
 
 tape('lexicographical', function(t){
   var ok = true;
-  var prev = util.encode(0);
+  var m = 1000000;
+  var em = util.encode(m);
+
   for(var i = 1; i < 1000; i++){
-    var curr = util.encode(i);
-    ok &= curr > prev;
-    prev = curr;
+    var n = Math.random() * m;
+    var en = util.encode(n);
+    ok &= (n >= m && en >= em) || (n < m && en < em);
   }
   t.ok(ok);
   t.end();
