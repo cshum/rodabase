@@ -1,5 +1,6 @@
-var tape = require('tape');
 var rodabase = require('../');
+
+var tape = require('tape');
 var memdown = require('memdown');
 var jsondown = require('jsondown');
 var _ = require('underscore');
@@ -81,3 +82,18 @@ tape('Put tx increment', function(t){
   });
 });
 
+return;
+tape('Tx Put Del Read Changs', function(t){
+  var api = roda('4');
+  var tx = roda.transaction();
+  var i;
+
+  for(i = 0; i < n; i++)
+    api.put({ _id: roda.util.encode(i), i: i }, tx);
+
+  for(i = 0; i < n; i+=3)
+    api.del(roda.util.encode(i), tx);
+  for(i = 0; i < n; i+=3)
+    api.del(roda.util.encode(i), tx); //non-exist del
+
+});

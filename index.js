@@ -4,7 +4,7 @@ var _           = require('underscore'),
     transaction = require('level-async-transaction'),
     util        = require('./lib/util'),
     mid         = require('./lib/mid'),
-    Roda        = require('./lib/roda');
+    Resource    = require('./lib/resource');
 
 module.exports = function(path, options){
   //default options
@@ -25,12 +25,12 @@ module.exports = function(path, options){
   id = mid(path);
 
   function roda(name){
-    map[name] = map[name] || new Roda(roda, name);
+    map[name] = map[name] || new Resource(roda, name);
     return map[name];
   }
   roda.db = db;
   roda.transaction = db.transaction;
-  roda.base = Roda.prototype;
+  roda.base = Resource.prototype;
   roda.util = util;
 
   roda.id = function(){
