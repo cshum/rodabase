@@ -100,9 +100,9 @@ tape('Changes', function(t){
 
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx);
-  // for(i = 0; i < n; i+=3)
-  //   api.del(encode(i), tx); //non-exist del
-  //
+  for(i = 0; i < n; i+=3)
+    api.del(encode(i), tx); //non-exist del
+
   tx.commit(function(err){
     t.notOk(err, 'commit success');
 
