@@ -11,13 +11,13 @@ var roda = rodabase('./test/data/crud.json', {
 });
 var n = 100;
 
-roda.base.use('diff', function delay(ctx, next){
-  if(this.name() > '2'){
-    console.log(ctx.result);
-    setTimeout(next, 10);
-  }else 
-    next();
-});
+// roda.base.use('diff', function delay(ctx, next){
+//   if(this.name() > '2'){
+//     console.log(ctx.result);
+//     setTimeout(next, 10);
+//   }else 
+//     next();
+// });
 
 tape('Read lock', function(t){
   var api = roda('1');
