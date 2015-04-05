@@ -14,7 +14,7 @@ var n = 100;
 roda.base.use('diff', function delay(ctx, next){
   if(this.name() > '2'){
     console.log(ctx.result);
-    setTimeout(next, 100);
+    setTimeout(next, 10);
   }else 
     next();
 });
@@ -100,18 +100,16 @@ tape('Changes', function(t){
 
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx);
-  for(i = 0; i < n; i+=3)
-    api.del(encode(i), tx); //non-exist del
-
+  // for(i = 0; i < n; i+=3)
+  //   api.del(encode(i), tx); //non-exist del
+  //
   tx.commit(function(err){
     t.notOk(err, 'commit success');
 
     api.read(function(err, list){
-      console.log(list);
-      t.equal(list.length, Math.floor(n/3), 'read n/3 length');
+      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
     api.changes(function(err, changes){
-      console.log(changes);
       t.equal(changes.length, n, 'changes n ength');
     });
   });

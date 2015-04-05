@@ -16,19 +16,20 @@
   "author": "Adrian C Shum <adrian@cshum.com>",
   "license": "MIT",
   "dependencies": {
-    "underscore": "^1.7.0",
-    "levelup": "^0.19.0",
-    "level-sublevel": "^6.3.15",
     "bytewise": "^0.7.1",
+    "d64": "^1.0.0",
     "ginga": "^0.1.7",
     "level-async-transaction": "0.0.10",
+    "level-sublevel": "^6.3.15",
+    "levelup": "^0.19.0",
     "mkdirp": "^0.5.0",
     "monotonic-timestamp": "0.0.9",
-    "d64": "^1.0.0"
+    "underscore": "^1.7.0"
   },
   "devDependencies": {
-    "tape": "^3.0.2",
+    "jsondown": "^0.1.1",
+    "leveldown": "^0.10.4",
     "memdown": "^1.0.0",
-    "jsondown": "^0.1.1"
+    "tape": "^3.0.2"
   }
 }
