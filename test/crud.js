@@ -115,3 +115,48 @@ tape('Changes', function(t){
   });
 
 });
+tape('Nested', function(t){
+  t.plan(5);
+  roda('5').use('validate', function(ctx, next){
+    roda('5.1').put({
+      _id: ctx.result._id,
+      i: ctx.result.i * 10
+    }, ctx.transaction);
+    next();
+  });
+  var tx = roda.transaction();
+  var i;
+
+  function encode(i){
+    return roda.util.trim(roda.util.encode(i));
+  }
+
+  for(i = 0; i < n; i++)
+    roda('5').put({ _id: encode(i), i: i }, tx);
+
+  for(i = 0; i < n; i+=3)
+    roda('5').del(encode(i), tx);
+  for(i = 0; i < n; i+=3)
+    roda('5').del(encode(i), tx); //non-exist del
+  for(i = 0; i < n; i+=2)
+    roda('5.1').del(encode(i), tx);
+
+  tx.commit(function(err){
+    t.notOk(err, 'commit success');
+
+    roda('5').read(function(err, list){
+      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
+    });
+    roda('5').changes(function(err, changes){
+      console.log(changes);
+      t.equal(changes.length, n, 'changes n length');
+    });
+    roda('5.1').read(function(err, list){
+      t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
+    });
+    roda('5.1').changes(function(err, list){
+      t.equal(list.length, n, 'hook changes n length');
+    });
+  });
+
+});
