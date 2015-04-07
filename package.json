@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Transactional, embedded document store built on LevelDB.",
   "scripts": {
-    "test": "set -e; rm -rf test/data; for t in test/*.js; do node $t; done;"
+    "test": "set -e; rm -rf test/data; mkdir test/data; for t in test/*.js; do node $t; done;"
   },
   "repository": {
     "type": "git",

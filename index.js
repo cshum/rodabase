@@ -14,21 +14,14 @@ module.exports = function(path, options){
     valueEncoding: 'json'
   });
 
-  var db, id, map = {};
+  var db, map = {};
 
   //level-sublevel
   db = sublevel( levelup(path, options) );
   //level-async-transaction
-  db = transaction(db);
-
-  if(options.id){
-    id = options.id;
-    if(id.length !== 8)
-      throw new Error('ID must be a 8 character string.');
-  }else{
-    //generate mid
-    id = mid(path);
-  }
+  transaction(db);
+  //unique id for db
+  mid(db);
 
   function roda(name){
     map[name] = map[name] || new Resource(roda, name);
@@ -38,10 +31,6 @@ module.exports = function(path, options){
   roda.transaction = db.transaction;
   roda.base = Resource.prototype;
   roda.util = util;
-
-  roda.id = function(){
-    return id;
-  };
 
   return roda;
 };
