@@ -1,7 +1,7 @@
 {
   "name": "rodabase",
-  "version": "0.0.1",
-  "description": "Embeddable, transactional JSON store buillt on LevelDB",
+  "version": "0.1.0",
+  "description": "Transactional, embedded document store built on LevelDB.",
   "scripts": {
     "test": "set -e; rm -rf test/data; for t in test/*.js; do node $t; done;"
   },
@@ -10,8 +10,11 @@
     "url": "git@github.com:cshum/rodabase.git"
   },
   "keywords": [
-    "api",
-    "leveldb"
+    "database",
+    "NoSQL",
+    "LevelDB",
+    "ACID",
+    "Transaction"
   ],
   "author": "Adrian C Shum <adrian@cshum.com>",
   "license": "MIT",
