@@ -148,13 +148,72 @@ tape('Nested', function(t){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
     roda('5').changes(function(err, changes){
-      console.log(changes);
       t.equal(changes.length, n, 'changes n length');
     });
     roda('5.1').read(function(err, list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
     roda('5.1').changes(function(err, list){
+      t.equal(list.length, n, 'hook changes n length');
+    });
+  });
+
+});
+tape('Double Nested', function(t){
+  t.plan(7);
+  roda('6').use('validate', function(ctx, next){
+    roda('6.1').put({
+      _id: ctx.result._id,
+      i: ctx.result.i * 10
+    }, ctx.transaction);
+    next();
+  });
+  roda('6.1').use('diff', function(ctx, next){
+    if(ctx.result)
+      roda('6.2').put({
+        _id: ctx.result._id,
+        i: ctx.result.i * 10
+      }, ctx.transaction);
+    else
+      roda('6.2').del(ctx.current._id, ctx.transaction);
+    next();
+  });
+  var tx = roda.transaction();
+  var i;
+
+  function encode(i){
+    return roda.util.trim(roda.util.encode(i));
+  }
+
+  for(i = 0; i < n; i++)
+    roda('6').put({ _id: encode(i), i: i }, tx);
+
+  for(i = 0; i < n; i+=3)
+    roda('6').del(encode(i), tx);
+  for(i = 0; i < n; i+=3)
+    roda('6').del(encode(i), tx); //non-exist del
+  for(i = 0; i < n; i+=2)
+    roda('6.1').del(encode(i), tx);
+
+  tx.commit(function(err){
+    t.notOk(err, 'commit success');
+
+    roda('6').read(function(err, list){
+      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
+    });
+    roda('6').changes(function(err, changes){
+      t.equal(changes.length, n, 'changes n length');
+    });
+    roda('6.1').read(function(err, list){
+      t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
+    });
+    roda('6.1').changes(function(err, list){
+      t.equal(list.length, n, 'hook changes n length');
+    });
+    roda('6.2').read(function(err, list){
+      t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
+    });
+    roda('6.2').changes(function(err, list){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
