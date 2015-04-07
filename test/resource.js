@@ -189,7 +189,7 @@ tape('Double Nested', function(t){
   for(i = 0; i < n; i++)
     roda('6').put({ _id: encode(i), i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('5').put({ _id: encode(i), i: i }, tx); //redundant put
+    roda('6').put({ _id: encode(i), i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('6').del(encode(i), tx);
