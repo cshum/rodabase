@@ -1,23 +1,13 @@
 var rodabase = require('../');
 
 var tape = require('tape');
-var memdown = require('memdown');
 var jsondown = require('jsondown');
 var _ = require('underscore');
 
-var roda = rodabase('./test/data/crud.json', {
-  // db: memdown
+var roda = rodabase('./test/data/resource.json', {
   db: jsondown
 });
 var n = 100;
-
-// roda.base.use('diff', function delay(ctx, next){
-//   if(this.name() > '2'){
-//     console.log(ctx.result);
-//     setTimeout(next, 10);
-//   }else 
-//     next();
-// });
 
 tape('Read lock', function(t){
   var api = roda('1');
