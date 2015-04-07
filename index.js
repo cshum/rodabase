@@ -21,8 +21,14 @@ module.exports = function(path, options){
   //level-async-transaction
   db = transaction(db);
 
-  //generate mid
-  id = mid(path);
+  if(options.id){
+    id = options.id;
+    if(id.length !== 8)
+      throw new Error('ID must be a 8 character string.');
+  }else{
+    //generate mid
+    id = mid(path);
+  }
 
   function roda(name){
     map[name] = map[name] || new Resource(roda, name);
