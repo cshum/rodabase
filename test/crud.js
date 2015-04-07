@@ -115,8 +115,8 @@ tape('Changes', function(t){
       t.equal(changes.length, n, 'changes n ength');
     });
   });
-
 });
+
 tape('Nested', function(t){
   t.plan(5);
   roda('5').use('validate', function(ctx, next){
