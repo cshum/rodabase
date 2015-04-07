@@ -11,11 +11,13 @@ var n = 100;
 
 tape('Read lock', function(t){
   var api = roda('1');
+  var ok = true;
 
   t.plan(2);
   function run(i){
     var tx = roda.transaction();
     api.get('k', tx, function(err, val){
+      ok &= !err;
 
       api.put({
         _id: 'k',
@@ -31,7 +33,7 @@ tape('Read lock', function(t){
   var tx = roda.transaction();
 
   api.get('k', tx, function(err, val){
-    t.ok(val);
+    t.ok(ok, 'no error');
     t.equal(val.k, n, 'Tx incrememnt');
   });
 
