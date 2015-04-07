@@ -97,6 +97,8 @@ tape('Changes', function(t){
 
   for(i = 0; i < n; i++)
     api.put({ _id: encode(i), i: i }, tx);
+  for(i = 0; i < n; i++)
+    api.put({ _id: encode(i), i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx);
@@ -133,6 +135,8 @@ tape('Nested', function(t){
 
   for(i = 0; i < n; i++)
     roda('5').put({ _id: encode(i), i: i }, tx);
+  for(i = 0; i < n; i++)
+    roda('5').put({ _id: encode(i), i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('5').del(encode(i), tx);
@@ -166,6 +170,11 @@ tape('Double Nested', function(t){
       _id: ctx.result._id,
       i: ctx.result.i * 10
     }, ctx.transaction);
+    //redundant
+    roda('6.1').put({
+      _id: ctx.result._id,
+      i: ctx.result.i * 10
+    }, ctx.transaction);
     next();
   });
   roda('6.1').use('diff', function(ctx, next){
@@ -187,6 +196,8 @@ tape('Double Nested', function(t){
 
   for(i = 0; i < n; i++)
     roda('6').put({ _id: encode(i), i: i }, tx);
+  for(i = 0; i < n; i++)
+    roda('5').put({ _id: encode(i), i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('6').del(encode(i), tx);
