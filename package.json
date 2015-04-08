@@ -31,8 +31,6 @@
   },
   "devDependencies": {
     "jsondown": "^0.1.1",
-    "leveldown": "^0.10.4",
-    "memdown": "^1.0.0",
     "tape": "^3.0.2"
   }
 }
