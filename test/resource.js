@@ -109,7 +109,7 @@ tape('Changes', function(t){
   });
 });
 
-tape('Nested', function(t){
+tape('Nested Put', function(t){
   t.plan(5);
   roda('5').use('validate', function(ctx, next){
     roda('5.1').put({
@@ -155,7 +155,7 @@ tape('Nested', function(t){
   });
 
 });
-tape('Double Nested', function(t){
+tape('Double Nested Put', function(t){
   t.plan(7);
   roda('6').use('validate', function(ctx, next){
     roda('6.1').put({
@@ -221,4 +221,29 @@ tape('Double Nested', function(t){
     });
   });
 
+});
+tape('Valdate', function(t){
+  t.plan(10);
+  roda('7')
+    .use('validate', function(ctx, next){
+      if(ctx.result.i % 3 === 0)
+        return next(new Error('No 3 multiple'));
+      next();
+    })
+    .use('validate', function(ctx, next){
+      if(ctx.result.i % 2 === 0)
+        return next(new Error('No 2 multiple'));
+      next();
+    });
+  var i;
+
+  for(i = 0; i < 10; i++){
+    roda('7').put({ i: i }, function(i, err, val){
+      if(i % 3 === 0 || i % 2 === 0){
+        t.notOk(val, i + ' err');
+      }else{
+        t.equal(val.i, i, i + ' value');
+      }
+    }.bind(null, i));
+  }
 });
