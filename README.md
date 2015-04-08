@@ -4,19 +4,12 @@ Transactional, embedded document store for Node.js, built on [LevelDB](https://g
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
-##Introduction
-
-
-##Basic Usage
-
 ```bash
 $ npm install rodabase leveldown
 ```
-<!-- [LevelDOWN](https://github.com/rvagg/node&#45;leveldown) is the default backing store for LevelDB.  -->
+[LevelDOWN](https://github.com/rvagg/node-leveldown) is the default backend store for LevelDB. 
 
-##API
-
-####rodabase(path[, options])
+###rodabase(path[, options])
 
 ```js
 var rodabase = require('rodabase');
@@ -33,8 +26,8 @@ var roda = rodabase('./db');
 ```js
 
 roda('count').put('bob', { n: 167 });
-
 var tx = roda.transaction();
+
 roda('count').get('bob', tx, function(err, data){
   data.n++;
   roda('count').put('bob', data, tx);
@@ -81,7 +74,7 @@ roda('user').put({ name: 'bob' }, function(err, val){
 
 ###Queue
 
-####roda(name).queue(name)
+####.queue(queueName)
 
 ```js
 roda('user')
@@ -104,11 +97,11 @@ roda('user').put({
 });
 
 ```
-####.use('job')
-####.use('end')
-####.use('error')
-####.start()
-####.stop()
+####queue.use('job')
+####queue.use('end')
+####queue.use('error')
+####queue.start()
+####queue.stop()
 
 
 ###roda.db
