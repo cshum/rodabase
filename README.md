@@ -66,6 +66,33 @@ roda('user').put({ name: 'bob' }, function(err, val){
 
 ####.use('validate', [hook...])
 ####.use('diff', [hook...])
+```js
+var users = roda('uses');
+var logs = roda('logs');
+
+users.use('diff', function(ctx, next){
+  if(!ctx.current && ctx.result)
+    logs.put({
+      msg: ctx.result._id + " created"
+    }, ctx.transaction);
+
+  if(ctx.current && !ctx.result)
+    logs.put({
+      msg: ctx.current._id + " deleted"
+    }, ctx.transaction);
+
+  next();
+});
+
+users
+  .put('bob',{ name: 'Bob' })
+  .del('bob', function(){
+    logs.read(function(err, data){
+      console.log(data); 
+      //[{... msg: "bob created"...}, {... msg: "bob deleted"... }]
+    });
+  });
+```
 
 ###Changes
 
