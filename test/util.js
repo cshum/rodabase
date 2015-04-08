@@ -31,3 +31,14 @@ tape('clock', function(t){
   t.end();
 });
 
+tape('timestamp', function(t){
+  var prev = 0;
+  var ok = true;
+  for(var i = 0, l = 1000; i < l; i++){
+    var time = util.timestamp();
+    ok &= prev < time;
+    prev = time;
+  }
+  t.ok(ok, 'monotonic');
+  t.end();
+});
