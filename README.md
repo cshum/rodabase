@@ -49,20 +49,22 @@ var roda = rodabase('./db');
 ####.put([id], doc, [tx], [cb])
 
 ```js
-roda('stuff').put('bob', { foo: 'bar' }); //_id: 'bob'
-roda('stuff').put({ _id: 'bob', foo: 'bar' }); //_id: 'bob'
-roda('stuff').put({ foo: 'bar' }, function(err, val){
+//specify _id
+roda('stuff').put('bob', { foo: 'bar' });
+roda('stuff').put({ _id: 'bob', foo: 'bar' });
+
+//auto generated _id
+roda('stuff').put({ foo: 'bar' }, function(err, res){
   if(err) 
     return console.error('Error: ', err);
 
-  console.log(val);
-  /*
-  auto generated _id
+  console.log(res);
+  /* Example response
   { 
-    "_id": "FZBJIBTCaLEJk8924J0A", 
+    "_id": "FZBJIBTCaLEJk8924J0A",
     "foo": "bar", 
-    "_rev": "k8924J0AFZ" 
-  }
+    "_rev": "k8924J0AFZ"
+  } 
   */
 }); 
 
@@ -108,10 +110,11 @@ count.get('bob', transaction, function(err, data){
 var people = roda('people');
 
 people.use('validate', function(ctx, next){
-  if(!typeof ctx.result.name === 'string')
+  if(typeof ctx.result.name !== 'string')
     return next(new Error('Name must be a string.'));
 
-  ctx.result.name = ctx.result.name.toUpperCase(); //modify result
+  //modify result
+  ctx.result.name = ctx.result.name.toUpperCase();
 
   //check existing
   people.get(ctx.result._id, ctx.transaction, function(err, val){
@@ -124,10 +127,10 @@ people.use('validate', function(ctx, next){
 people.put('foo', { name: 123 }, function(err, val){
   console.log(err); //Error: Name must be a string.
 });
-people.put('foo', { name: 'bob' }, function(err, val){
-  console.log(val.name); //BOB
-});
 people.put('foo', { name: 'bar' }, function(err, val){
+  console.log(val.name); //BAR
+});
+people.put('foo', { name: 'bob' }, function(err, val){
   console.log(err); //Error: foo already existed.
 });
 ```
@@ -146,15 +149,14 @@ count.use('diff', function(ctx, next){
   next();
 });
 
-count
-  .put('bob',{ n: 6 })
-  .put('bob',{ n: 8 })
-  .del('bob', function(){
-    log.read(function(err, data){
-      console.log(data); 
-      //[{ delta: 6 ...}, { delta: 2 ...}, { delta: -8 ...}]
-    });
+count.put('bob',{ n: 6 });
+count.put('bob',{ n: 8 });
+count.del('bob', function(){
+  log.read(function(err, data){
+    console.log(data); 
+    //[{ delta: 6 ...}, { delta: 2 ...}, { delta: -8 ...}]
   });
+});
 ```
 
 ###Changes
