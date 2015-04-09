@@ -134,29 +134,25 @@ people.put('foo', { name: 'bar' }, function(err, val){
 
 ####.use('diff', [hook...])
 ```js
-var people = roda('people');
-var logs = roda('logs');
+var count = roda('count');
+var log = roda('log');
 
-people.use('diff', function(ctx, next){
-  if(!ctx.current && ctx.result)
-    logs.put({
-      msg: ctx.result._id + " created"
-    }, ctx.transaction);
+count.use('diff', function(ctx, next){
+  var from = ctx.current ? ctx.current.n : 0;
+  var to = ctx.result ? ctx.result.n : 0;
 
-  if(ctx.current && !ctx.result)
-    logs.put({
-      msg: ctx.current._id + " deleted"
-    }, ctx.transaction);
+  log.put({ delta: to - from }, ctx.transaction);
 
   next();
 });
 
-people
-  .put('bob',{ name: 'Bob' })
+count
+  .put('bob',{ n: 6 })
+  .put('bob',{ n: 8 })
   .del('bob', function(){
-    logs.read(function(err, data){
+    log.read(function(err, data){
       console.log(data); 
-      //[{... msg: "bob created"...}, {... msg: "bob deleted"... }]
+      //[{ delta: 6 ...}, { delta: 2 ...}, { delta: -8 ...}]
     });
   });
 ```
