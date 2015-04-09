@@ -69,11 +69,10 @@ users.use('diff', function(ctx, next){
 });
 
 users.put('bob',{ name: 'Bob' });
-
 users.del('bob', function(){
   logs.read(function(err, data){
     console.log(data); 
-    //[{... msg: "bob created"...}, {... msg: "bob removed"... }]
+    //[{... msg: "bob created"...}, {... msg: "bob deleted"... }]
   });
 });
 ```
