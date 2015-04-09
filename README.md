@@ -13,7 +13,7 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**API**]
+**API**
 
 - [rodabase(path[, options])](#rodabasepath-options)
 - [roda(name)](#rodaname)
@@ -74,14 +74,6 @@ roda('stuff').put({ foo: 'bar' }, function(err, val){
 ```
 
 ####.get(id, [tx], [cb])
-```js
-roda('stuff').get('bob', function(err, val){
-  if(err){
-
-  }
-
-});
-```
 
 ####.del(id, [tx], [cb])
 
@@ -201,7 +193,7 @@ users.put({
   username: 'bob',
   email: 'bob@example.com'
 }, function(err, data){
-  //bob added. email comes afterwards.
+  //bob added. Email comes afterwards.
 });
 
 ```
