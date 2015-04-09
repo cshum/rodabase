@@ -14,9 +14,9 @@ $ npm install rodabase leveldown
 **API**
 
   - [rodabase(path[, options])](#rodabasepath-options)
-  - [CRUD](#crud)
-    - [roda(name)](#rodaname)
+  - [roda(name)](#rodaname)
     - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
+    - [.get([id], doc, [tx], [cb])](#getid-doc-tx-cb)
     - [.del(id, [cb])](#delid-cb)
     - [.read([options], [cb])](#readoptions-cb)
   - [Hooks](#hooks)
@@ -48,14 +48,14 @@ var rodabase = require('rodabase');
 var roda = rodabase('./db');
 ```
 
-###CRUD
-
+###roda(name)
 ```js
 
 ```
-####roda(name)
 
 ####.put([id], doc, [tx], [cb])
+
+####.get([id], doc, [tx], [cb])
 
 ####.del(id, [cb])
 
