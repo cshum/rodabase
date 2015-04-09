@@ -108,7 +108,6 @@ count.get('bob', transaction, function(err, data){
     console.log(val.n); //equals 167
 
     tx.commit(function(){
-
       count.get('bob', function(err, val){
         console.log(val.n); //equals 168
       });
@@ -125,7 +124,7 @@ people.use('validate', function(ctx, next){
   if(!typeof ctx.result.name === 'string')
     return next(new Error('Name must be a string.'));
 
-  ctx.result.name.toUpperCase(); //modify result
+  ctx.result.name = ctx.result.name.toUpperCase(); //modify result
 
   //check existing
   people.get(ctx.result._id, ctx.transaction, function(err, val){
