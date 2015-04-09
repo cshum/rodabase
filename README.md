@@ -19,26 +19,10 @@ var roda = rodabase('./db');
 
 ###CRUD
 
-####roda(name)
-
-####roda.transaction()
-
 ```js
 
-roda('count').put('bob', { n: 167 });
-var tx = roda.transaction();
-
-roda('count').get('bob', tx, function(err, data){
-  data.n++;
-  roda('count').put('bob', data, tx);
-
-  tx.commit(function(){
-    roda('count').get('bob', function(err, val){
-      console.log(val.n); //equals 168
-    });
-  });
-});
 ```
+####roda(name)
 
 ####.put([id], doc, [tx], [cb])
 
@@ -84,14 +68,14 @@ users.use('diff', function(ctx, next){
   next();
 });
 
-users
-  .put('bob',{ name: 'Bob' })
-  .del('bob', function(){
-    logs.read(function(err, data){
-      console.log(data); 
-      //[{... msg: "bob created"...}, {... msg: "bob deleted"... }]
-    });
+users.put('bob',{ name: 'Bob' });
+
+users.del('bob', function(){
+  logs.read(function(err, data){
+    console.log(data); 
+    //[{... msg: "bob created"...}, {... msg: "bob removed"... }]
   });
+});
 ```
 
 ###Changes
@@ -124,14 +108,51 @@ roda('user').put({
 });
 
 ```
-####queue.use('job')
-####queue.use('end')
-####queue.use('error')
+
 ####queue.start()
 ####queue.stop()
+####queue.use('job', [hook...])
+####queue.use('end', [hook...])
+####queue.use('error', [hook...])
+
+###Utilities
+
+####roda.db
+
+[LevelUP](https://github.com/rvagg/node-levelup) instance of Rodabase.
+
+####roda(name).store
+
+[level-sublevel](https://github.com/dominictarr/level-sublevel) section instance under namespace `name`.
 
 
-###roda.db
+####roda.transaction()
+
+Create a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
+
+```js
+
+var count = roda('count');
+var transaction = roda.transaction(); //new transaction object
+
+count.put('bob', { n: 167 });
+
+count.get('bob', transaction, function(err, data){
+  data.n++; //increment n by 1
+  count.put('bob', data, transaction);
+
+  count.get('bob', function(err, val){
+    console.log(val.n); //equals 167
+
+    tx.commit(function(){
+
+      count.get('bob', function(err, val){
+        console.log(val.n); //equals 168
+      });
+    });
+  });
+});
+```
 
 
 
