@@ -9,6 +9,37 @@ $ npm install rodabase leveldown
 ```
 [LevelDOWN](https://github.com/rvagg/node-leveldown) is the default backend store for LevelDB. 
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**API**
+
+  - [rodabase(path[, options])](#rodabasepath-options)
+  - [CRUD](#crud)
+    - [roda(name)](#rodaname)
+    - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
+    - [.del(id, [cb])](#delid-cb)
+    - [.read([options], [cb])](#readoptions-cb)
+  - [Hooks](#hooks)
+    - [.use('validate', [hook...])](#usevalidate-hook)
+    - [.use('diff', [hook...])](#usediff-hook)
+  - [Changes](#changes)
+    - [.changes([since], [limit], [cb])](#changessince-limit-cb)
+    - [.clock([cb])](#clockcb)
+  - [Queue](#queue)
+    - [.queue(queueName)](#queuequeuename)
+    - [queue.start()](#queuestart)
+    - [queue.stop()](#queuestop)
+    - [queue.use('job', [hook...])](#queueusejob-hook)
+    - [queue.use('end', [hook...])](#queueuseend-hook)
+    - [queue.use('error', [hook...])](#queueuseerror-hook)
+  - [Utilities](#utilities)
+    - [roda.db](#rodadb)
+    - [roda(name).store](#rodanamestore)
+    - [roda.transaction()](#rodatransaction)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ###rodabase(path[, options])
 
 ```js
