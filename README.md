@@ -30,11 +30,6 @@ $ npm install rodabase leveldown
   - [.clock([cb])](#clockcb)
 - [Queue](#queue)
   - [.queue(name)](#queuename)
-  - [queue.start()](#queuestart)
-  - [queue.stop()](#queuestop)
-  - [queue.use('job', [hook...])](#queueusejob-hook)
-  - [queue.use('end', [hook...])](#queueuseend-hook)
-  - [queue.use('error', [hook...])](#queueuseerror-hook)
 - [Utilities](#utilities)
   - [roda.db](#rodadb)
   - [roda(name).store](#rodanamestore)
@@ -197,12 +192,11 @@ users.put({
 });
 
 ```
-
-####queue.start()
-####queue.stop()
-####queue.use('job', [hook...])
-####queue.use('end', [hook...])
-####queue.use('error', [hook...])
+#####.use('job', [hook...])
+#####.use('end', [hook...])
+#####.use('error', [hook...])
+#####.start()
+#####.stop()
 
 ###Utilities
 
