@@ -78,14 +78,23 @@ roda('stuff').put({ foo: 'bar' }, function(err, res){
 
 ###Transaction
 
+Transaction in Rodabase manages synchronous states of asynchronous operations.
+This enables non-blocking, "callback hell" suppressing, strong consistent way of dealing with data.
+
+Due to the embedded nature, 
+Rodabase allows enforcing business logic in database layer, 
+under the same application process.
+This enables fine-grain data integrity and validations rules throughout the application, with very simple APIs.
+
 ####roda.transaction()
 
-Create a new transaction instance.
+Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
+Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
+Example below demonstrates isolation in transaction instance. 
 
 ```js
-
 var count = roda('count');
-var transaction = roda.transaction(); //new transaction object
+var transaction = roda.transaction(); //create transaction instance
 
 count.put('bob', { n: 167 });
 
@@ -96,7 +105,7 @@ count.get('bob', transaction, function(err, data){
   count.get('bob', function(err, val){
     console.log(val.n); //equals 167
 
-    tx.commit(function(){
+    transaction.commit(function(){
       count.get('bob', function(err, val){
         console.log(val.n); //equals 168
       });
@@ -104,8 +113,22 @@ count.get('bob', transaction, function(err, data){
   });
 });
 ```
+Under the hood, each write in Rodabase consists of multiple reads and writes in LevelDB,
+managed by its own transaction instance.
+This can be described by the following transaction pipeline:
+
+1. Begin transaction
+2. `validate` hook for `put`
+3. Read current state of document
+4. Read current namespace clock
+5. `diff` hook for `put` or `del`
+6. Write document, changes and clock
+7. Commit transaction
+
+`validate` and `diff` are transaction hooks for validating input, reacting to changes. 
 
 ####.use('validate', [hook...])
+
 ```js
 var people = roda('people');
 
@@ -119,7 +142,7 @@ people.use('validate', function(ctx, next){
   //check existing
   people.get(ctx.result._id, ctx.transaction, function(err, val){
     if(val)
-      return next(new Error(ctx.result._id + ' already existed.'));
+      return next(new Error(ctx.result._id + ' already exists.'));
     next();
   });
 });
@@ -131,11 +154,16 @@ people.put('foo', { name: 'bar' }, function(err, val){
   console.log(val.name); //BAR
 });
 people.put('foo', { name: 'bob' }, function(err, val){
-  console.log(err); //Error: foo already existed.
+  console.log(err); //Error: foo already exists.
 });
 ```
 
 ####.use('diff', [hook...])
+
+At `diff` stage, acquire access to current state of document and namespace clock. 
+Result document is 
+This is particularly useful when acknowledge current state of , for example deltaing 
+
 ```js
 var count = roda('count');
 var log = roda('log');
@@ -144,6 +172,7 @@ count.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result ? ctx.result.n : 0;
 
+  //Transaction works across different namespaces.
   log.put({ delta: to - from }, ctx.transaction);
 
   next();
@@ -158,6 +187,7 @@ count.del('bob', function(){
   });
 });
 ```
+
 
 ###Changes
 
