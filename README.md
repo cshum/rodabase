@@ -13,7 +13,7 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**API**
+**Guide**
 
 - [rodabase(path[, options])](#rodabasepath-options)
 - [roda(name)](#rodaname)
@@ -44,9 +44,16 @@ var rodabase = require('rodabase');
 var roda = rodabase('./db');
 ```
 
-###roda(name)
+###roda(namespace)
+
+All operations are asynchronous although they don't necessarily require a callback.
 
 ####.put([id], doc, [tx], [cb])
+Inserting, updating data into Rodabase. 
+
+* `id`:  Primary key under the namespace. Must be a string. Will auto generate a unique ID if not specifying one.
+* `doc`: Resulting document. Must be a JSON serializable object.
+* `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
 ```js
 //specify _id
@@ -62,7 +69,7 @@ roda('stuff').put({ foo: 'bar' }, function(err, res){
 }); 
 
 ```
-Auto generated _id is a 20 chars, URL-safe, Base64 time sorted unique ID.
+Auto generated _id is a 20 chars, URL-safe, base64 time sorted unique ID.
 
 Example result:
 ```json
@@ -75,10 +82,22 @@ Example result:
 ```
 
 ####.get(id, [tx], [cb])
+Fetching data from Rodabase.
+
+* `id`: Primary key under the namespace. Must be a string.
+* `tx`: Optional transaction object. See [Transaction](#transaction) section.
+
+Callback value returns document object.
+If it doesn't exist in the store then the callback will receive a `null` value.
 
 ####.del(id, [tx], [cb])
+Removes data from Rodabase.
+
+* `id`: Primary key under the namespace. Must be a string.
+* `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
 ####.read([options], [cb])
+Obtains an array of all or ranged documents under the namespace.
 
 ###Transaction
 
@@ -86,8 +105,8 @@ Rodabase manages transaction states in asynchronous, isolated manner. Rodabase i
 
 * **Atomicity**: Transactions complete either entirely or no effect at all. Made possible thanks to atomic [batch](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) operations in LevelDB.
 * **Consistency**: Rodabase features "transaction hook", allowing fine-grain control over data integrity, validations, logging, consistently throughout the application. With a very simple API.
-* **Isolation**: modifications of a transaction is isolated until successful commits.
-* **Durability**: Committed transactions are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) on LevelDB.
+* **Isolation**: States of transactions are isolated until successful commits.
+* **Durability**: Committed transactions are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) as a LevelDB option.
 
 This enables non-blocking, strong consistent way of dealing with data.
 
@@ -120,15 +139,14 @@ count.get('bob', transaction, function(err, data){
 ```
 Under the hood, each write in Rodabase consists of multiple reads and writes in LevelDB,
 managed by its own transaction instance.
-This can be described by the following steps:
+This can be described as following steps:
 
-1. Begin transaction
+1. Begin
 2. `validate` hook for `put`
-3. Read current state of document
-4. Read current namespace clock
+3. Read current state of document and clock
 5. `diff` hook for `put` or `del`
 6. Write document, changes and clock
-7. Commit transaction
+7. Commit
 
 `validate` and `diff` are transaction hooks for validating input, reacting to changes. 
 
@@ -192,8 +210,8 @@ count.use('diff', function(ctx, next){
   next();
 });
 
-count.put('bob',{ n: 6 });
-count.put('bob',{ n: 8 });
+count.put('bob', { n: 6 });
+count.put('bob', { n: 8 });
 count.del('bob', function(){
   log.read(function(err, data){
     console.log(data); 
