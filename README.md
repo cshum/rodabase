@@ -59,14 +59,18 @@ roda('stuff').put({ foo: 'bar' }, function(err, res){
     return console.error('Error: ', err);
 
   console.log(res);
-  /* Example response
-  { 
-    "_id": "FZBJIBTCaLEJk8924J0A",
-    "foo": "bar", 
-    "_rev": "k8924J0AFZ"
-  } 
-  */
 }); 
+
+```
+Auto generated _id is a 20 chars, URL-safe, Base64 time sorted unique ID.
+
+Example result:
+```json
+{ 
+  "_id": "FZBJIBTCaLEJk8924J0A",
+  "foo": "bar", 
+  "_rev": "k8924J0AFZ"
+} 
 
 ```
 
