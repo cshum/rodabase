@@ -78,13 +78,14 @@ roda('stuff').put({ foo: 'bar' }, function(err, res){
 
 ###Transaction
 
-Transaction in Rodabase manages synchronous states of asynchronous operations.
-This enables non-blocking, "callback hell" suppressing, strong consistent way of dealing with data.
+Rodabase manages transaction states in asynchronous, isolated manner. Rodabase is ACID compliant:
 
-Due to the embedded nature, 
-Rodabase allows enforcing business logic in database layer, 
-under the same application process.
-This enables fine-grain data integrity and validations rules throughout the application, with very simple APIs.
+* **Atomicity**: Transactions complete either entirely or no effect at all. Made possible thanks to atomic [batch](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) operations in LevelDB.
+* **Consistency**: Rodabase features "transaction hook", allowing fine-grain control over data integrity, validations, logging, consistently throughout the application. With a very simple API.
+* **Isolation**: modifications of a transaction is isolated until successful commits.
+* **Durability**: Committed transactions are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) on LevelDB.
+
+This enables non-blocking, strong consistent way of dealing with data.
 
 ####roda.transaction()
 
@@ -115,7 +116,7 @@ count.get('bob', transaction, function(err, data){
 ```
 Under the hood, each write in Rodabase consists of multiple reads and writes in LevelDB,
 managed by its own transaction instance.
-This can be described by the following transaction pipeline:
+This can be described by the following steps:
 
 1. Begin transaction
 2. `validate` hook for `put`
@@ -128,6 +129,11 @@ This can be described by the following transaction pipeline:
 `validate` and `diff` are transaction hooks for validating input, reacting to changes. 
 
 ####.use('validate', [hook...])
+
+Hook is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
+Context object consists of the following properties:
+* **ctx.result**: Resulting document, can be accessed and modified with custom validation rules.
+* **ctx.transaction**: Transaction instance. Additional operations can be attached.
 
 ```js
 var people = roda('people');
@@ -159,10 +165,14 @@ people.put('foo', { name: 'bob' }, function(err, val){
 ```
 
 ####.use('diff', [hook...])
+At `diff` stage, access to document and namespace clock is acquired.
+Current and resulting document can be compared for additional log, diff related operations.
 
-At `diff` stage, acquire access to current state of document and namespace clock. 
-Result document is 
-This is particularly useful when acknowledge current state of , for example deltaing 
+Hook is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
+Context object consists of the following properties:
+* **ctx.current**: Current state of document. 
+* **ctx.result**: Resulting document. But unlike `validation` hook, resulting document is read-only at this stage.
+* **ctx.transaction**: Transaction instance. Additional operations can be attached.
 
 ```js
 var count = roda('count');
@@ -187,7 +197,6 @@ count.del('bob', function(){
   });
 });
 ```
-
 
 ###Changes
 
