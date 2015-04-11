@@ -16,7 +16,7 @@ $ npm install rodabase leveldown
 **Guide**
 
 - [rodabase(path[, options])](#rodabasepath-options)
-- [roda(name)](#rodaname)
+- [roda(namespace)](#rodanamespace)
   - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
@@ -28,7 +28,6 @@ $ npm install rodabase leveldown
 - [Changes](#changes)
   - [.changes([since], [limit], [cb])](#changessince-limit-cb)
   - [.clock([cb])](#clockcb)
-- [Queue](#queue)
   - [.queue(name)](#queuename)
 - [Utilities](#utilities)
   - [roda.db](#rodadb)
@@ -51,14 +50,13 @@ All operations are asynchronous although they don't necessarily require a callba
 ####.put([id], doc, [tx], [cb])
 Inserting, updating data into Rodabase. 
 
-* `id`:  Primary key under the namespace. Must be a string. Will auto generate a unique ID if not specifying one.
+* `id`:  Primary key under namespace. Must be a string. Will auto generate a unique ID if not specifying one.
 * `doc`: Resulting document. Must be a JSON serializable object.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
 ```js
 //specify _id
 roda('stuff').put('bob', { foo: 'bar' });
-roda('stuff').put({ _id: 'bob', foo: 'bar' });
 
 //auto generated _id
 roda('stuff').put({ foo: 'bar' }, function(err, res){
@@ -224,9 +222,6 @@ count.del('bob', function(){
 
 ####.changes([since], [limit], [cb])
 ####.clock([cb])
-
-###Queue
-
 ####.queue(name)
 
 ```js

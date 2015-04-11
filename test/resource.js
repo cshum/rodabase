@@ -19,8 +19,7 @@ tape('Read lock', function(t){
     api.get('k', tx, function(err, val){
       ok &= !err;
 
-      api.put({
-        _id: 'k',
+      api.put('k',{
         k: (val ? val.k : 0) + 1
       }, tx);
 
@@ -106,9 +105,9 @@ tape('Changes', function(t){
   }
 
   for(i = 0; i < n; i++)
-    api.put({ _id: encode(i), i: i }, tx);
+    api.put(encode(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    api.put({ _id: encode(i), i: i }, tx); //redundant put
+    api.put(encode(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx);
@@ -130,8 +129,7 @@ tape('Changes', function(t){
 tape('Nested Put', function(t){
   t.plan(5);
   roda('5').use('validate', function(ctx, next){
-    roda('5.1').put({
-      _id: ctx.result._id,
+    roda('5.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
     next();
@@ -144,9 +142,9 @@ tape('Nested Put', function(t){
   }
 
   for(i = 0; i < n; i++)
-    roda('5').put({ _id: encode(i), i: i }, tx);
+    roda('5').put(encode(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('5').put({ _id: encode(i), i: i }, tx); //redundant put
+    roda('5').put(encode(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('5').del(encode(i), tx);
@@ -176,21 +174,18 @@ tape('Nested Put', function(t){
 tape('Double Nested Put', function(t){
   t.plan(7);
   roda('6').use('validate', function(ctx, next){
-    roda('6.1').put({
-      _id: ctx.result._id,
+    roda('6.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
     //redundant
-    roda('6.1').put({
-      _id: ctx.result._id,
+    roda('6.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
     next();
   });
   roda('6.1').use('diff', function(ctx, next){
     if(ctx.result)
-      roda('6.2').put({
-        _id: ctx.result._id,
+      roda('6.2').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
     else
@@ -205,9 +200,9 @@ tape('Double Nested Put', function(t){
   }
 
   for(i = 0; i < n; i++)
-    roda('6').put({ _id: encode(i), i: i }, tx);
+    roda('6').put(encode(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('6').put({ _id: encode(i), i: i }, tx); //redundant put
+    roda('6').put(encode(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('6').del(encode(i), tx);
