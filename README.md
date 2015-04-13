@@ -1,6 +1,6 @@
 #Rodabase
 
-Transactional document store for Node.js. Built on [LevelDB](https://github.com/rvagg/node-levelup).
+Node.js transactional document store, built on [LevelDB](https://github.com/rvagg/node-levelup).
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
