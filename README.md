@@ -182,6 +182,7 @@ Current and resulting document can be compared for additional log, diff related 
 
 `hook` is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
 Context object consists of the following properties:
+* `ctx.id`: Document ID.
 * `ctx.current`: Current state of document. `null` if this is an insert.
 * `ctx.result`: Resulting document. `null` if this is a delete. Unlike `validation` hook, resulting document cannot be modified at this stage.
 * `ctx.transaction`: Transaction instance. Additional operations can be attached.
