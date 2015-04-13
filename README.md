@@ -1,6 +1,6 @@
 #Rodabase
 
-Transactional, embedded document store for Node.js, built on [LevelDB](https://github.com/rvagg/node-levelup).
+Transactional document store for Node.js. Built on [LevelDB](https://github.com/rvagg/node-levelup).
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
@@ -165,22 +165,14 @@ people.use('validate', function(ctx, next){
   //modify result
   ctx.result.name = ctx.result.name.toUpperCase();
 
-  //check existing
-  people.get(ctx.result._id, ctx.transaction, function(err, val){
-    if(val)
-      return next(new Error(ctx.result._id + ' already exists.'));
-    next();
-  });
+  next();
 });
 
-people.put('foo', { name: 123 }, function(err, val){
+people.put({ name: 123 }, function(err, val){
   console.log(err); //Error: Name must be a string.
 });
-people.put('foo', { name: 'bar' }, function(err, val){
+people.put({ name: 'bar' }, function(err, val){
   console.log(val.name); //BAR
-});
-people.put('foo', { name: 'bob' }, function(err, val){
-  console.log(err); //Error: foo already exists.
 });
 ```
 
