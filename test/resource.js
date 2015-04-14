@@ -260,3 +260,38 @@ tape('Valdate', function(t){
     }.bind(null, i));
   }
 });
+tape('Unique Index', function(t){
+  t.plan(5);
+  function isEmail(str){
+    return /\S+@\S+\.\S+/.test(str);
+  }
+  roda('users')
+    .use('validate', function(ctx, next){
+      if(!isEmail(ctx.result.email))
+        return next(new Error('Invalid email.'));
+      next();
+    })
+    .index('email', function(doc, emit){
+      emit(doc.email, doc, true);
+    })
+    .put({ email: 'abc' }, function(err, val){
+      t.ok(err, 'Invalid Email');
+    })
+    .put({ email: 'foo@bar.com' }, function(err, val){
+      t.equal(val.email, 'foo@bar.com', 'Email Saved');
+    })
+    .put({ email: 'adrian@cshum.com' }, function(err, val){
+      t.equal(val.email, 'adrian@cshum.com', 'Email Saved');
+    })
+    .put({ email: 'adrian@cshum.com' }, function(err, val){
+      t.ok(err, 'Repeated Email');
+      this.read(function(err, list){
+        t.deepEqual(list.map(function(doc){
+          return doc.email; 
+        }), [
+          'foo@bar.com',
+          'adrian@cshum.com'
+        ], 'Email list');
+      });
+    })
+});
