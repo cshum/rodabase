@@ -260,8 +260,9 @@ tape('Valdate', function(t){
     }.bind(null, i));
   }
 });
+
 tape('Unique Index', function(t){
-  t.plan(5);
+  t.plan(7);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -285,13 +286,25 @@ tape('Unique Index', function(t){
     })
     .put({ email: 'adrian@cshum.com' }, function(err, val){
       t.ok(err, 'Repeated Email');
+
+      this.read('email',function(err, list){
+        t.deepEqual(list.map(function(doc){
+          return doc.email; 
+        }), [
+          'adrian@cshum.com',
+          'foo@bar.com'
+        ], 'Email indexed read');
+      });
       this.read(function(err, list){
         t.deepEqual(list.map(function(doc){
           return doc.email; 
         }), [
           'foo@bar.com',
           'adrian@cshum.com'
-        ], 'Email list');
+        ], 'Email read');
+      });
+      this.get('foo@bar.com', 'email', function(err, val){
+        t.equal(val.email, 'foo@bar.com', 'index get');
       });
     })
 });
