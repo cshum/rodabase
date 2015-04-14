@@ -101,7 +101,7 @@ tape('Changes', function(t){
   var i;
 
   function encode(i){
-    return roda.util.trim(roda.util.encode(i));
+    return roda.util.trim(roda.util.encode64(i));
   }
 
   for(i = 0; i < n; i++)
@@ -138,7 +138,7 @@ tape('Nested Put', function(t){
   var i;
 
   function encode(i){
-    return roda.util.trim(roda.util.encode(i));
+    return roda.util.trim(roda.util.encode64(i));
   }
 
   for(i = 0; i < n; i++)
@@ -196,7 +196,7 @@ tape('Double Nested Put', function(t){
   var i;
 
   function encode(i){
-    return roda.util.trim(roda.util.encode(i));
+    return roda.util.trim(roda.util.encode64(i));
   }
 
   for(i = 0; i < n; i++)

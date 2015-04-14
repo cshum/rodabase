@@ -9,7 +9,7 @@ var roda = rodabase('./test/data/queue.json', {
 });
 var n = 100;
 function encode(i){
-  return roda.util.trim(roda.util.encode(i));
+  return roda.util.trim(roda.util.encode64(i));
 }
 
 

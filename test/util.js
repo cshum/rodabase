@@ -18,6 +18,23 @@ tape('encode decode', function(t){
   t.ok(id, 'identical');
   t.end();
 });
+tape('encode decode 64', function(t){
+  var lex = true;
+  var id = true;
+  var m = 1000000;
+  var em = util.encode64(m);
+
+  for(var i = 1; i < 1000; i++){
+    var n = Math.random() * m;
+    var en = util.encode64(n);
+
+    lex &= (n >= m && en >= em) || (n < m && en < em);
+    id &= n === util.decode64(en);
+  }
+  t.ok(lex, 'lexicographical');
+  t.ok(id, 'identical');
+  t.end();
+});
 
 tape('clock', function(t){
   var str = '01234567abc,12345678def,23456789ghi';
