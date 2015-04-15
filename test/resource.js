@@ -261,8 +261,8 @@ tape('Valdate', function(t){
   }
 });
 
-tape('Index', function(t){
-  t.plan(16);
+tape('Index and Range', function(t){
+  t.plan(17);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -367,6 +367,11 @@ tape('Index', function(t){
         t.deepEqual(_.pluck(list, 'email'), [
           'adrian@cshum.com'
         ], 'Male over age 15');
+      });
+      this.read('gender_age', { prefix: ['M'], lte: 15 }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), [
+          'hello@world.com'
+        ], 'Male age 15');
       });
     });
 });
