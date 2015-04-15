@@ -262,7 +262,7 @@ tape('Valdate', function(t){
 });
 
 tape('Index', function(t){
-  t.plan(11);
+  t.plan(13);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -311,32 +311,34 @@ tape('Index', function(t){
           'foo@bar.com',
         ], 'Email read by order');
       });
+      this.get('foo@bar.com', 'email', function(err, val){
+        t.equal(val.email, 'foo@bar.com', 'index get');
+      });
+
+      var all = [
+        'hello@world.com',
+        'foo@bar.com',
+        'adrian@cshum.com'
+      ];
       this.read('age',function(err, list){
-        t.deepEqual(list.map(function(doc){
-          return doc.email; 
-        }), [
-          'hello@world.com',
-          'foo@bar.com',
-          'adrian@cshum.com'
-        ], 'Email read by age');
+        t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age');
       });
       this.read('age', { gt: 15 }, function(err, list){
-        t.deepEqual(list.map(function(doc){
-          return doc.email; 
-        }), [
+        t.deepEqual(_.pluck(list, 'email'), [
           'adrian@cshum.com'
         ], 'Email read by age >15');
       });
       this.read('age', { lt: 25 }, function(err, list){
-        t.deepEqual(list.map(function(doc){
-          return doc.email; 
-        }), [
+        t.deepEqual(_.pluck(list, 'email'), [
           'hello@world.com',
           'foo@bar.com'
         ], 'Email read by age <25');
       });
-      this.get('foo@bar.com', 'email', function(err, val){
-        t.equal(val.email, 'foo@bar.com', 'index get');
+      this.read('age', { gte: 15 }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age >=15');
+      });
+      this.read('age', { lte: 25 }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age <=25');
       });
     });
 });
