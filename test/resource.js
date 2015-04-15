@@ -320,20 +320,20 @@ tape('Index', function(t){
           'adrian@cshum.com'
         ], 'Email read by age');
       });
-      this.read('age', { gt: 20 }, function(err, list){
+      this.read('age', { gt: 15 }, function(err, list){
         t.deepEqual(list.map(function(doc){
           return doc.email; 
         }), [
           'adrian@cshum.com'
-        ], 'Email read by age >20');
+        ], 'Email read by age >15');
       });
-      this.read('age', { lt: 20 }, function(err, list){
+      this.read('age', { lt: 25 }, function(err, list){
         t.deepEqual(list.map(function(doc){
           return doc.email; 
         }), [
           'hello@world.com',
           'foo@bar.com'
-        ], 'Email read by age <20');
+        ], 'Email read by age <25');
       });
       this.get('foo@bar.com', 'email', function(err, val){
         t.equal(val.email, 'foo@bar.com', 'index get');

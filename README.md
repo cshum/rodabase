@@ -100,6 +100,23 @@ Obtains an array of all or ranged documents under the namespace.
 
 ###Index
 ####.index(name, mapper)
+#####emit(key, [doc], [unique])
+
+```js
+var users = roda('users');
+
+users
+  .index('email', function(doc, emit){
+    emit(doc.email, true); //unique
+  })
+  .index('age', function(doc, emit){
+    emit(doc.age); //non-unique
+  });
+
+users.get('foo@bar.com','email', ...); //get user by email
+users.read('age', { gt: 15 }, ...); //list users over age 15
+
+```
 
 ###Transaction
 
