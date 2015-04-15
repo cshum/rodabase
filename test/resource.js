@@ -261,8 +261,8 @@ tape('Valdate', function(t){
   }
 });
 
-tape('Unique Index', function(t){
-  t.plan(7);
+tape('Index', function(t){
+  t.plan(11);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -275,14 +275,20 @@ tape('Unique Index', function(t){
     .index('email', function(doc, emit){
       emit(doc.email, doc, true);
     })
+    .index('age', function(doc, emit){
+      emit(doc.age, doc);
+    })
     .put({ email: 'abc' }, function(err, val){
       t.ok(err, 'Invalid Email');
     })
-    .put({ email: 'foo@bar.com' }, function(err, val){
-      t.equal(val.email, 'foo@bar.com', 'Email Saved');
-    })
-    .put({ email: 'adrian@cshum.com' }, function(err, val){
+    .put({ email: 'adrian@cshum.com', age: 25 }, function(err, val){
       t.equal(val.email, 'adrian@cshum.com', 'Email Saved');
+    })
+    .put({ email: 'hello@world.com', age: 15 }, function(err, val){
+      t.equal(val.email, 'hello@world.com', 'Email Saved');
+    })
+    .put({ email: 'foo@bar.com', age: 15 }, function(err, val){
+      t.equal(val.email, 'foo@bar.com', 'Email Saved');
     })
     .put({ email: 'adrian@cshum.com' }, function(err, val){
       t.ok(err, 'Repeated Email');
@@ -292,19 +298,45 @@ tape('Unique Index', function(t){
           return doc.email; 
         }), [
           'adrian@cshum.com',
-          'foo@bar.com'
-        ], 'Email indexed read');
+          'foo@bar.com',
+          'hello@world.com'
+        ], 'Email read by email');
       });
       this.read(function(err, list){
         t.deepEqual(list.map(function(doc){
           return doc.email; 
         }), [
+          'adrian@cshum.com',
+          'hello@world.com',
+          'foo@bar.com',
+        ], 'Email read by order');
+      });
+      this.read('age',function(err, list){
+        t.deepEqual(list.map(function(doc){
+          return doc.email; 
+        }), [
+          'hello@world.com',
           'foo@bar.com',
           'adrian@cshum.com'
-        ], 'Email read');
+        ], 'Email read by age');
+      });
+      this.read('age', { gt: 20 }, function(err, list){
+        t.deepEqual(list.map(function(doc){
+          return doc.email; 
+        }), [
+          'adrian@cshum.com'
+        ], 'Email read by age >15');
+      });
+      this.read('age', { gt: 15, lt: 20 }, function(err, list){
+        t.deepEqual(list.map(function(doc){
+          return doc.email; 
+        }), [
+          'hello@world.com',
+          'foo@bar.com'
+        ], 'Email read by age >=15 <20');
       });
       this.get('foo@bar.com', 'email', function(err, val){
         t.equal(val.email, 'foo@bar.com', 'index get');
       });
-    })
+    });
 });
