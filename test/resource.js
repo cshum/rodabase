@@ -324,15 +324,10 @@ tape('Index', function(t){
         t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age');
       });
       this.read('age', { gt: 15 }, function(err, list){
-        t.deepEqual(_.pluck(list, 'email'), [
-          'adrian@cshum.com'
-        ], 'Email read by age >15');
+        t.deepEqual(_.pluck(list, 'email'), all.slice(-1), 'Email read by age >15');
       });
       this.read('age', { lt: 25 }, function(err, list){
-        t.deepEqual(_.pluck(list, 'email'), [
-          'hello@world.com',
-          'foo@bar.com'
-        ], 'Email read by age <25');
+        t.deepEqual(_.pluck(list, 'email'), all.slice(0,-1), 'Email read by age <25');
       });
       this.read('age', { gte: 15 }, function(err, list){
         t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age >=15');
