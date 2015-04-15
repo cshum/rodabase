@@ -325,15 +325,15 @@ tape('Index', function(t){
           return doc.email; 
         }), [
           'adrian@cshum.com'
-        ], 'Email read by age >15');
+        ], 'Email read by age >20');
       });
-      this.read('age', { gt: 15, lt: 20 }, function(err, list){
+      this.read('age', { lt: 20 }, function(err, list){
         t.deepEqual(list.map(function(doc){
           return doc.email; 
         }), [
           'hello@world.com',
           'foo@bar.com'
-        ], 'Email read by age >=15 <20');
+        ], 'Email read by age <20');
       });
       this.get('foo@bar.com', 'email', function(err, val){
         t.equal(val.email, 'foo@bar.com', 'index get');
