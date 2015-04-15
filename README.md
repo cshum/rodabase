@@ -13,7 +13,7 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Guide**
+##Guide
 
 - [rodabase(path[, options])](#rodabasepath-options)
 - [roda(namespace)](#rodanamespace)
@@ -79,10 +79,11 @@ Example result:
 
 ```
 
-####.get(id, [tx], [cb])
+####.get(id, [index], [tx], [cb])
 Fetching data from Rodabase.
 
 * `id`: Primary key under the namespace. Must be a string.
+* `index`: Optional index name. See [Index](#index) section.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
 Callback value returns document object.
@@ -96,6 +97,9 @@ Removes data from Rodabase.
 
 ####.read([options], [cb])
 Obtains an array of all or ranged documents under the namespace.
+
+###Index
+####.index(name, mapper)
 
 ###Transaction
 

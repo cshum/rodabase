@@ -273,10 +273,10 @@ tape('Index', function(t){
       next();
     })
     .index('email', function(doc, emit){
-      emit(doc.email, doc, true);
+      emit(doc.email, true);
     })
     .index('age', function(doc, emit){
-      emit(doc.age, doc);
+      emit(doc.age);
     })
     .put({ email: 'abc' }, function(err, val){
       t.ok(err, 'Invalid Email');
