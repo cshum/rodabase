@@ -1,6 +1,9 @@
 #Rodabase
 
 Node.js transactional document store, built on [LevelDB](https://github.com/rvagg/node-levelup).
+Rodabase simplifies application development with an easy-to-use API and inherent consistency.
+* Schemaless by default, constraint when needed.
+* Transactions with ACID compliance.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
