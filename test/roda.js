@@ -4,7 +4,7 @@ var tape = require('tape');
 var jsondown = require('jsondown');
 var _ = require('underscore');
 
-var roda = rodabase('./test/data/resource.json', {
+var roda = rodabase('./test/data/roda.json', {
   db: jsondown
 });
 var n = 100;
