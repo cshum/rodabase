@@ -26,6 +26,7 @@ tape('Queue durable volatile', function(t){
       })
       .use('end', function(ctx, next){
         cb(null, result);
+        this.pause();
         next();
       })
       .start();

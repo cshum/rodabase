@@ -30,7 +30,7 @@ tape('Queue', function(t){
       })
       .use('end', function(ctx, next){
         cb(null, result);
-        this.stop();
+        this.pause();
         next();
       })
       .start();
