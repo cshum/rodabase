@@ -12,7 +12,7 @@ function encode(i){
   return roda.util.trim(roda.util.encode64(i));
 }
 
-tape('Queue volatile vs presistence', function(t){
+tape('Queue durable volatile', function(t){
   t.plan(2);
   var api = roda('1');
   var i;
@@ -34,10 +34,10 @@ tape('Queue volatile vs presistence', function(t){
   api.put({ foo: 'bar' }, function(err, val){
     api.changes(function(err, changes){
       queue('bla', function(err, list){
-        t.deepEqual(list, [val], 'presistent queue list === new item');
+        t.deepEqual(list, [val], 'durable queue list == [new item]');
       });
       queue(null, function(err, list){
-        t.deepEqual(list, changes, 'volatile queue list === changes');
+        t.deepEqual(list, changes, 'volatile queue list == changes');
       });
     });
   });

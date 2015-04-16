@@ -13,7 +13,7 @@ function encode(i){
 }
 
 tape('Queue', function(t){
-  t.plan(3);
+  t.plan(2);
   var api = roda('1');
   var tx = roda.transaction();
   var i;
@@ -39,13 +39,10 @@ tape('Queue', function(t){
   tx.commit(function(){
     api.changes(function(err, changes){
       queue('bla', function(err, list){
-        t.deepEqual(list, changes, 'queue list === changes');
+        t.deepEqual(list, changes, 'queue list == changes');
       });
       queue(null, function(err, list){
-        t.deepEqual(list, changes, 'queue list === changes');
-        queue(null, function(err, list){
-          t.deepEqual(list, changes, 'volatile');
-        });
+        t.deepEqual(list, changes, 'queue list == changes');
       });
     });
   });
