@@ -16,27 +16,23 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-##API
+##Guide
 
 - [rodabase(path[, options])](#rodabasepath-options)
-- [roda(namespace)](#rodanamespace)
+- [roda(name)](#rodaname)
   - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
-  - [.get(id, [index], [tx], [cb])](#getid-index-tx-cb)
+  - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
-  - [.read([options], [cb])](#readoptions-cb)
-- [Index](#index)
   - [.index(name, mapper)](#indexname-mapper)
+  - [.read([index], [options], [cb])](#readindex-options-cb)
 - [Transaction](#transaction)
-  - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
+  - [roda.transaction()](#rodatransaction)
 - [Changes](#changes)
   - [.changes([since], [limit], [cb])](#changessince-limit-cb)
   - [.clock([cb])](#clockcb)
-  - [.queue(name)](#queuename)
-- [Utilities](#utilities)
-  - [roda.db](#rodadb)
-  - [roda(name).store](#rodanamestore)
+  - [.queue([name])](#queuename)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -48,7 +44,7 @@ var rodabase = require('rodabase');
 var roda = rodabase('./db');
 ```
 
-###roda(namespace)
+###roda(name)
 
 All operations are asynchronous although they don't necessarily require a callback.
 
@@ -84,11 +80,10 @@ Example result:
 
 ```
 
-####.get(id, [index], [tx], [cb])
+####.get(id, [tx], [cb])
 Fetching data from Rodabase.
 
 * `id`: Primary key under the namespace. Must be a string.
-* `index`: Optional index name. See [Index](#index) section.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
 Callback value returns document object.
@@ -100,10 +95,6 @@ Removes data from Rodabase.
 * `id`: Primary key under the namespace. Must be a string.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
-####.read([options], [cb])
-Obtains an array of all or ranged documents under the namespace.
-
-###Index
 ####.index(name, mapper)
 #####emit(key, [doc], [unique])
 
@@ -122,6 +113,14 @@ users.get('foo@bar.com','email', ...); //get user by email
 users.read('age', { gt: 15 }, ...); //list users over age 15
 
 ```
+####.read([index], [options], [cb])
+* `prefix`
+* `gt`
+* `gte`
+* `lt`
+* `lte`
+* `eq`
+Obtains an array of all or ranged documents under the namespace.
 
 ###Transaction
 
@@ -134,35 +133,7 @@ Rodabase manages transaction states in asynchronous, isolated manner. Rodabase i
 
 This enables non-blocking, strong consistent way of dealing with data.
 
-####roda.transaction()
-
-Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
-Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
-Example below demonstrates isolation in transaction instance. 
-
-```js
-var count = roda('count');
-var transaction = roda.transaction(); //create transaction instance
-
-count.put('bob', { n: 167 });
-
-count.get('bob', transaction, function(err, data){
-  data.n++; //increment n by 1
-  count.put('bob', data, transaction);
-
-  count.get('bob', function(err, val){
-    console.log(val.n); //equals 167
-
-    transaction.commit(function(){
-      count.get('bob', function(err, val){
-        console.log(val.n); //equals 168
-      });
-    });
-  });
-});
-```
-Under the hood, each write in Rodabase consists of multiple reads and writes in LevelDB,
-managed by its own transaction instance.
+Under the hood, each write in Rodabase consists of multiple, transactional reads and writes in LevelDB,
 This can be described as following steps:
 
 1. Begin
@@ -220,7 +191,7 @@ count.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result.n || 0;
 
-  //Transaction works across different namespaces.
+  //Transaction works across namespaces.
   log.put({ delta: to - from }, ctx.transaction);
 
   next();
@@ -235,6 +206,33 @@ count.del('bob', function(){
   });
 });
 ```
+####roda.transaction()
+
+Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
+Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
+Example below demonstrates isolation in transaction instance. 
+
+```js
+var count = roda('count');
+var transaction = roda.transaction(); //create transaction instance
+
+count.put('bob', { n: 167 });
+
+count.get('bob', transaction, function(err, data){
+  data.n++; //increment n by 1
+  count.put('bob', data, transaction);
+
+  count.get('bob', function(err, val){
+    console.log(val.n); //equals 167
+
+    transaction.commit(function(){
+      count.get('bob', function(err, val){
+        console.log(val.n); //equals 168
+      });
+    });
+  });
+});
+```
 
 ###Changes
 
@@ -242,6 +240,11 @@ count.del('bob', function(){
 ####.clock([cb])
 ####.queue([name])
 
+#####.use('job', [hook...])
+#####.use('end', [hook...])
+#####.use('error', [hook...])
+#####.start()
+#####.pause()
 ```js
 var users = roda('users');
 
@@ -264,20 +267,3 @@ users.put({
 });
 
 ```
-#####.use('job', [hook...])
-#####.use('end', [hook...])
-#####.use('error', [hook...])
-#####.start()
-#####.stop()
-
-###Utilities
-
-####roda.db
-
-[LevelUP](https://github.com/rvagg/node-levelup) instance of Rodabase.
-
-####roda(name).store
-
-[level-sublevel](https://github.com/dominictarr/level-sublevel) section instance under namespace `name`.
-
-

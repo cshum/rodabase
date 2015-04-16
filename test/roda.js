@@ -262,7 +262,7 @@ tape('Valdate', function(t){
 });
 
 tape('Index and Range', function(t){
-  t.plan(17);
+  t.plan(18);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -317,8 +317,11 @@ tape('Index and Range', function(t){
           'foo@bar.com',
         ], 'Email read by order');
       });
-      this.get('foo@bar.com', 'email', function(err, val){
-        t.equal(val.email, 'foo@bar.com', 'index get');
+      this.read('email',{ eq:'foo@bar.com' }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), ['foo@bar.com'], 'index eq');
+      });
+      this.read('email',{ eq:'foo@bar.co' }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), [], 'index eq false');
       });
 
       var all = [
