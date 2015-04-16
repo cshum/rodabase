@@ -12,14 +12,10 @@ function encode(i){
   return roda.util.trim(roda.util.encode64(i));
 }
 
-tape('Queue', function(t){
-  t.plan(3);
+tape('Queue volatile vs presistence', function(t){
+  t.plan(2);
   var api = roda('1');
-  var tx = roda.transaction();
   var i;
-
-  for(i = 0; i < n; i++)
-    api.put({ i: i }, tx);
 
   function queue(id, cb){
     var result = [];
@@ -30,22 +26,18 @@ tape('Queue', function(t){
       })
       .use('end', function(ctx, next){
         cb(null, result);
-        this.stop();
         next();
       })
       .start();
   }
 
-  tx.commit(function(){
+  api.put({ foo: 'bar' }, function(err, val){
     api.changes(function(err, changes){
       queue('bla', function(err, list){
-        t.deepEqual(list, changes, 'queue list === changes');
+        t.deepEqual(list, [val], 'presistent queue list === new item');
       });
       queue(null, function(err, list){
-        t.deepEqual(list, changes, 'queue list === changes');
-        queue(null, function(err, list){
-          t.deepEqual(list, changes, 'volatile');
-        });
+        t.deepEqual(list, changes, 'volatile queue list === changes');
       });
     });
   });

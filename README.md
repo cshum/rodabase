@@ -241,7 +241,7 @@ count.del('bob', function(){
 
 ####.changes([since], [limit], [cb])
 ####.clock([cb])
-####.queue(name)
+####.queue([name])
 
 ```js
 var users = roda('users');
