@@ -184,7 +184,7 @@ tape('Double Nested Put', function(t){
     next();
   });
   roda('6.1').use('diff', function(ctx, next){
-    if(ctx.result)
+    if(!ctx.result._deleted)
       roda('6.2').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);

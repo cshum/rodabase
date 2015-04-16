@@ -16,7 +16,7 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-##Guide
+##API
 
 - [rodabase(path[, options])](#rodabasepath-options)
 - [roda(namespace)](#rodanamespace)
@@ -210,7 +210,7 @@ Current and resulting document can be compared for additional log, diff related 
 Context object consists of the following properties:
 * `ctx.id`: Document ID.
 * `ctx.current`: Current state of document. `null` if this is an insert.
-* `ctx.result`: Resulting document. `null` if this is a delete. Unlike `validation` hook, resulting document cannot be modified at this stage.
+* `ctx.result`: Resulting document. `ctx.result._deleted === true` if this is a delete. Unlike `validation` hook, resulting document cannot be modified at this stage.
 * `ctx.transaction`: Transaction instance. Additional operations can be attached.
 
 ```js
@@ -219,7 +219,7 @@ var log = roda('log');
 
 count.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
-  var to = ctx.result ? ctx.result.n : 0;
+  var to = ctx.result.n || 0;
 
   //Transaction works across different namespaces.
   log.put({ delta: to - from }, ctx.transaction);
