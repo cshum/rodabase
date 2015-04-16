@@ -262,7 +262,7 @@ tape('Valdate', function(t){
 });
 
 tape('Index and Range', function(t){
-  t.plan(18);
+  t.plan(22);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -321,7 +321,10 @@ tape('Index and Range', function(t){
         t.deepEqual(_.pluck(list, 'email'), ['foo@bar.com'], 'index eq');
       });
       this.read('email',{ eq:'foo@bar.co' }, function(err, list){
-        t.deepEqual(_.pluck(list, 'email'), [], 'index eq false');
+        t.deepEqual(_.pluck(list, 'email'), [], 'index prefix not eq ');
+      });
+      this.read('email',{ prefix:'foo@bar.co' }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), ['foo@bar.com'], 'index string prefix');
       });
 
       var all = [
@@ -346,6 +349,13 @@ tape('Index and Range', function(t){
           'Email read by age <25'
         );
       });
+      this.read('age', { eq: 15 }, function(err, list){
+        t.deepEqual(
+          _.pluck(list, 'email'), 
+          all.slice(0,-1), 
+          'Email read by age === 15'
+        );
+      });
       this.read('age', { gte: 15 }, function(err, list){
         t.deepEqual(
           _.pluck(list, 'email'), 
@@ -366,10 +376,18 @@ tape('Index and Range', function(t){
           'adrian@cshum.com'
         ], 'Male');
       });
+      this.read('gender_age', { eq: ['M'] }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), [], 'fales eq');
+      });
       this.read('gender_age', { prefix: ['M'], gt: 15 }, function(err, list){
         t.deepEqual(_.pluck(list, 'email'), [
           'adrian@cshum.com'
         ], 'Male over age 15');
+      });
+      this.read('gender_age', { eq: ['M', 25] }, function(err, list){
+        t.deepEqual(_.pluck(list, 'email'), [
+          'adrian@cshum.com'
+        ], 'Male age === 25');
       });
       this.read('gender_age', { prefix: ['M'], lte: 15 }, function(err, list){
         t.deepEqual(_.pluck(list, 'email'), [
