@@ -24,6 +24,7 @@ module.exports = function(path, options){
   mid(db);
 
   function roda(name){
+    name = String(name);
     map[name] = map[name] || new Resource(roda, name);
     return map[name];
   }
