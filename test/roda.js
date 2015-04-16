@@ -327,35 +327,35 @@ tape('Index and Range', function(t){
         t.deepEqual(_.pluck(list, 'email'), ['foo@bar.com'], 'index string prefix');
       });
 
-      var all = [
-        'hello@world.com',
-        'foo@bar.com',
-        'adrian@cshum.com'
-      ];
       this.read('age',function(err, list){
         t.deepEqual(_.pluck(list, 'email'), all, 'Email read by age');
       });
       this.read('age', { gt: 15 }, function(err, list){
         t.deepEqual(
           _.pluck(list, 'email'), 
-          all.slice(-1), 
+          ['adrian@cshum.com'], 
           'Email read by age >15'
         );
       });
       this.read('age', { lt: 25 }, function(err, list){
         t.deepEqual(
           _.pluck(list, 'email'), 
-          all.slice(0,-1), 
+          ['hello@world.com','foo@bar.com'],
           'Email read by age <25'
         );
       });
       this.read('age', { eq: 15 }, function(err, list){
         t.deepEqual(
           _.pluck(list, 'email'), 
-          all.slice(0,-1), 
+          ['hello@world.com','foo@bar.com'],
           'Email read by age === 15'
         );
       });
+      var all = [
+        'hello@world.com',
+        'foo@bar.com',
+        'adrian@cshum.com'
+      ];
       this.read('age', { gte: 15 }, function(err, list){
         t.deepEqual(
           _.pluck(list, 'email'), 
