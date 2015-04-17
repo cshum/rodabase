@@ -16,7 +16,7 @@ $ npm install rodabase leveldown
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-##Guide
+##API
 
 - [rodabase(path[, options])](#rodabasepath-options)
 - [roda(name)](#rodaname)
@@ -24,7 +24,7 @@ $ npm install rodabase leveldown
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.index(name, mapper)](#indexname-mapper)
-  - [.read([index], [options], [cb])](#readindex-options-cb)
+  - [.readStream([index], [options])](#readstreamindex-options)
 - [Transaction](#transaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
@@ -108,18 +108,18 @@ users.index('age', function(doc, emit){
   emit(doc.age); //non-unique
 });
 
-users.get('foo@bar.com','email', ...); //get user by email
-users.read('age', { gt: 15 }, ...); //list users over age 15
+users.readStream('age', { gt: 15 }); //users over age 15
 
 ```
-####.read([index], [options], [cb])
-* `prefix`
-* `gt`
-* `gte`
-* `lt`
-* `lte`
-* `eq`
-Obtains an array of all or ranged documents under the namespace.
+####.readStream([index], [options])
+* `index`
+* `options`
+  * `prefix`
+  * `gt`
+  * `gte`
+  * `lt`
+  * `lte`
+  * `eq`
 
 ###Transaction
 
@@ -199,9 +199,8 @@ count.use('diff', function(ctx, next){
 count.put('bob', { n: 6 });
 count.put('bob', { n: 8 });
 count.del('bob', function(){
-  log.read(function(err, data){
-    console.log(data); 
-    //[{ delta: 6 ...}, { delta: 2 ...}, { delta: -8 ...}]
+  log.readStream().pluck('delta').toArray(function(data){
+    console.log(data); //[6, 2, -8]
   });
 });
 ```
