@@ -120,7 +120,7 @@ tape('Changes', function(t){
     api.readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    api.changes([],function(err, changes){
+    api.changes(function(err, changes){
       t.equal(changes.length, n, 'changes n ength');
     });
   });
@@ -159,13 +159,13 @@ tape('Nested Put', function(t){
     roda('5').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('5').changes([],function(err, changes){
+    roda('5').changes(function(err, changes){
       t.equal(changes.length, n, 'changes n length');
     });
     roda('5.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('5.1').changes([],function(err, list){
+    roda('5.1').changes(function(err, list){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
@@ -217,19 +217,19 @@ tape('Double Nested Put', function(t){
     roda('6').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('6').changes([],function(err, changes){
+    roda('6').changes(function(err, changes){
       t.equal(changes.length, n, 'changes n length');
     });
     roda('6.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.1').changes([],function(err, list){
+    roda('6.1').changes(function(err, list){
       t.equal(list.length, n, 'hook changes n length');
     });
     roda('6.2').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.2').changes([],function(err, list){
+    roda('6.2').changes(function(err, list){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
