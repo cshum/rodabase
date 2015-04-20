@@ -25,10 +25,10 @@
     "level-async-transaction": "^0.1.2",
     "level-sublevel": "^6.3.15",
     "levelup": "^0.19.0",
-    "underscore": "^1.7.0",
     "highland": "^2.4.0"
   },
   "devDependencies": {
+    "underscore": "^1.7.0",
     "jsondown": "^0.1.1",
     "tape": "^3.0.2"
   }
