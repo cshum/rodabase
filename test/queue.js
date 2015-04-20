@@ -37,7 +37,7 @@ tape('Queue', function(t){
   }
 
   tx.commit(function(){
-    api.changes( function(err, changes){
+    api.changesStream([]).pluck('result').collect().pull(function(err, changes){
       queue('bla', function(err, list){
         t.deepEqual(list, changes, 'queue list == changes');
       });
