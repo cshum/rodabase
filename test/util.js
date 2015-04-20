@@ -43,7 +43,7 @@ tape('clock', function(t){
     '12345678':'def',
     '23456789':'ghi'
   };
-  t.deepEqual(util.clockObj(arr), obj, 'clockObj');
+  t.deepEqual(util.clockObject(arr), obj, 'clockObject');
   t.deepEqual(util.clock(obj), arr, 'clock');
   t.end();
 });
