@@ -137,7 +137,7 @@ tape('Live Changes', function(t){
   api.liveStream()
     .each(function(data){
       live.push(data);
-      if(data.result.m === m - 1)
+      if(data.m === m - 1)
         t.equal(live.length, m, 'live m ength');
     });
 
@@ -151,7 +151,7 @@ tape('Live Changes', function(t){
     .each(function(data){
       // console.log(data.result);
       liveChanges.push(data);
-      if(data.result.m === m - 1)
+      if(data.m === m - 1)
         t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
     });
 

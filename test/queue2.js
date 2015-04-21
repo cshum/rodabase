@@ -21,7 +21,7 @@ tape('Queue durable volatile', function(t){
     var result = [];
     api.queue(id)
       .use('job', function(ctx, next){
-        result.push(ctx.result);
+        result.push(ctx.result.i);
         next();
       })
       .use('end', function(ctx, next){
@@ -32,10 +32,10 @@ tape('Queue durable volatile', function(t){
       .start();
   }
 
-  api.put({ foo: 'bar' }, function(err, val){
-    api.changeStream({since: []}).pluck('result').toArray(function(changes){
+  api.put({ i: 'foo' }, function(err, val){
+    api.changeStream({since: []}).pluck('i').toArray(function(changes){
       queue('bla', function(err, list){
-        t.deepEqual(list, [val], 'durable queue list == [new item]');
+        t.deepEqual(list, [val.i], 'durable queue list == [new item]');
       });
       queue(null, function(err, list){
         t.deepEqual(list, changes, 'volatile queue list == changes');
