@@ -115,16 +115,6 @@ tape('Changes', function(t){
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx); //non-exist del
 
-  /*
-  api.liveStream().map(H.wrapCallback(function(data, cb){
-    setTimeout(function(){
-      cb(null, data);
-    }, 100);
-  }))
-  .parallel(1)
-  .each(console.log.bind(console));
-  */
-
   tx.commit(function(err){
     t.notOk(err, 'commit success');
 
@@ -135,6 +125,35 @@ tape('Changes', function(t){
       t.equal(changes.length, n, 'changes n ength');
     });
   });
+});
+tape('Live Changes', function(t){
+  t.plan(1);
+  var api = roda('4');
+
+  var liveChanges = [];
+  var live = [];
+  var m = 17;
+
+  api.liveStream()
+    .each(function(data){
+      live.push(data);
+      if(data.result.m === m - 1){
+        t.equal(live.length, m, 'live m ength');
+      }
+    });
+
+    /*
+  api.changeStream({since: [], live: true})
+    .each(function(data){
+      liveChanges.push(data);
+      console.log('liveChanges',data);
+      if(data.m === m - 1)
+        t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
+    });
+    */
+
+  for(i = 0; i < m; i++)
+    api.put({ j: Math.random(), m:i });
 });
 
 tape('Nested Put', function(t){
