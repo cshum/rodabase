@@ -129,6 +129,9 @@ tape('Changes', function(t){
 tape('Live Changes', function(t){
   t.plan(2);
   var api = roda('4');
+  // api.use('validate', function(ctx, next){
+  //   setTimeout(next, 10);
+  // });
 
   var liveChanges = [];
   var live = [];
@@ -144,12 +147,11 @@ tape('Live Changes', function(t){
   api.changeStream({since: [], live: true})
     // .map(H.wrapCallback(function(data, cb){
     //   setTimeout(function(){
+    //     console.log(data);
     //     cb(null, data);
     //   },50);
-    // }))
-    // .parallel(1)
+    // })).parallel(1)
     .each(function(data){
-      // console.log(data.result);
       liveChanges.push(data);
       if(data.m === m - 1)
         t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
