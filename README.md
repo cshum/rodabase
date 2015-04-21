@@ -30,9 +30,10 @@ $ npm install rodabase leveldown
   - [.use('diff', [hook...])](#usediff-hook)
   - [roda.transaction()](#rodatransaction)
 - [Changes](#changes)
-  - [.changes([since], [limit], [cb])](#changessince-limit-cb)
-  - [.clock([cb])](#clockcb)
-  - [.queue([name])](#queuename)
+  - [.clockStream()](#clockstream)
+  - [.changeStream()](#changestream)
+  - [.liveStream()](#livestream)
+  - [.queueStream()](#queuestream)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -108,10 +109,10 @@ users.index('age', function(doc, emit){
   emit(doc.age); //non-unique
 });
 
-users.readStream('age', { gt: 15 }); //users over age 15
+users.readStream({ index: 'age', gt: 15 }); //users over age 15
 
 ```
-####.readStream([index], [options])
+####.readStream([options])
 * `index`
 * `options`
   * `prefix`
@@ -232,36 +233,16 @@ count.get('bob', transaction, function(err, data){
 });
 ```
 
-###Changes
+###Changes and Replication
 
-####.changes([since], [limit], [cb])
-####.clock([cb])
-####.queue([name])
-
-#####.use('job', [hook...])
-#####.use('end', [hook...])
-#####.use('error', [hook...])
-#####.start()
-#####.pause()
+####.liveStream()
+####.queueStream()
+####.clockStream()
+####.changeStream()
+####.mergeStream()
 ```js
-var users = roda('users');
-
-users.queue('email')
-  .use('job', function(ctx, next){
-    sendEmail(ctx.result.email, function(err){
-      if(err) return next(err);
-
-      //email sent
-      next();
-    });
-  })
-  .start();
-
-users.put({
-  username: 'bob',
-  email: 'bob@example.com'
-}, function(err, data){
-  //bob added. Email comes afterwards.
-});
-
+var a = roda('a');
+var b = roda('b');
+b.clockStream().pipe(a.changeStream()).pipe(b.mergeStream());
+a.queueStream().pipe(b.mergeStream());
 ```
