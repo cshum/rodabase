@@ -127,7 +127,7 @@ tape('Changes', function(t){
   });
 });
 tape('Live Changes', function(t){
-  t.plan(1);
+  t.plan(2);
   var api = roda('4');
 
   var liveChanges = [];
@@ -137,23 +137,26 @@ tape('Live Changes', function(t){
   api.liveStream()
     .each(function(data){
       live.push(data);
-      if(data.result.m === m - 1){
+      if(data.result.m === m - 1)
         t.equal(live.length, m, 'live m ength');
-      }
     });
 
-    /*
   api.changeStream({since: [], live: true})
+    // .map(H.wrapCallback(function(data, cb){
+    //   setTimeout(function(){
+    //     cb(null, data);
+    //   },50);
+    // }))
+    // .parallel(1)
     .each(function(data){
+      // console.log(data.result);
       liveChanges.push(data);
-      console.log('liveChanges',data);
-      if(data.m === m - 1)
+      if(data.result.m === m - 1)
         t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
     });
-    */
 
   for(i = 0; i < m; i++)
-    api.put({ j: Math.random(), m:i });
+    api.put({ m:i });
 });
 
 tape('Nested Put', function(t){
