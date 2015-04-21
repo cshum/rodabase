@@ -3,6 +3,7 @@ var rodabase = require('../');
 var tape = require('tape');
 var jsondown = require('jsondown');
 var _ = require('underscore');
+var H = require('highland');
 
 var roda = rodabase('./test/data/roda.json', {
   db: jsondown
@@ -113,6 +114,16 @@ tape('Changes', function(t){
     api.del(encode(i), tx);
   for(i = 0; i < n; i+=3)
     api.del(encode(i), tx); //non-exist del
+
+  /*
+  api.liveStream().map(H.wrapCallback(function(data, cb){
+    setTimeout(function(){
+      cb(null, data);
+    }, 100);
+  }))
+  .parallel(1)
+  .each(console.log.bind(console));
+  */
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
