@@ -233,16 +233,14 @@ count.get('bob', transaction, function(err, data){
 });
 ```
 
-###Changes and Replication
+###Changes
 
 ####.liveStream()
-####.queueStream()
 ####.clockStream()
-####.changeStream()
+####.changeStream([options])
 ####.mergeStream()
 ```js
 var a = roda('a');
 var b = roda('b');
 b.clockStream().pipe(a.changeStream()).pipe(b.mergeStream());
-a.queueStream().pipe(b.mergeStream());
 ```
