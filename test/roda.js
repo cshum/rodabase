@@ -77,6 +77,24 @@ tape('Tx increment', function(t){
   });
 });
 
+tape('tx count', function(t){
+  t.plan(1);
+  var c = roda('counts');
+  var tx = roda.transaction();
+
+  c.put('bob', { n: 167 }, tx);
+  c.get('bob', tx, function(err, data){
+    data.n++;
+
+    c.put('bob', data, tx);
+    tx.commit(function(){
+      c.get('bob', function(err, val){
+        t.equal(val.n, 168, 'tx increment');
+      });
+    });
+  });
+});
+
 tape('Changes', function(t){
   t.plan(3);
   var api = roda('4');
