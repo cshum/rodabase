@@ -163,7 +163,7 @@ tape('Live Changes', function(t){
 
 tape('Nested Put', function(t){
   t.plan(5);
-  roda('5').use('validate', function(ctx, next){
+  roda('5').use('diff', function(ctx, next){
     roda('5.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
@@ -208,7 +208,7 @@ tape('Nested Put', function(t){
 });
 tape('Double Nested Put', function(t){
   t.plan(7);
-  roda('6').use('validate', function(ctx, next){
+  roda('6').use('diff', function(ctx, next){
     roda('6.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
