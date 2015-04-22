@@ -1,4 +1,3 @@
-return;
 var rodabase = require('../');
 
 var tape = require('tape');
@@ -22,27 +21,26 @@ tape('Queue', function(t){
   for(i = 0; i < n; i++)
     api.put({ i: i }, tx);
 
-  function queue(id, cb){
+  function queue(id, p, cb){
     var result = [];
-    api.queue(id)
+    api.queue(id, p)
       .use('job', function(ctx, next){
         result.push(ctx.result.i);
-        next();
-      })
-      .use('end', function(ctx, next){
-        cb(null, result);
-        this.pause();
-        next();
+        if(ctx.result.i === n - 1)
+          cb(null, result);
+
+        setTimeout(next, Math.random() + 1);
+        // setTimeout(next, 500);
       })
       .start();
   }
 
   tx.commit(function(){
     api.changeStream({since: []}).pluck('i').toArray(function(changes){
-      queue('bla', function(err, list){
+      queue('bla', 1, function(err, list){
         t.deepEqual(list, changes, 'queue list == changes');
       });
-      queue(null, function(err, list){
+      queue(null, 1, function(err, list){
         t.deepEqual(list, changes, 'queue list == changes');
       });
     });

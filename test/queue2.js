@@ -1,4 +1,3 @@
-return;
 var rodabase = require('../');
 
 var tape = require('tape');
@@ -18,27 +17,25 @@ tape('Queue durable volatile', function(t){
   var api = roda('1');
   var i;
 
-  function queue(id, cb){
+  function queue(id, p, cb){
     var result = [];
-    api.queue(id)
+    api.queue(id, p)
       .use('job', function(ctx, next){
         result.push(ctx.result.i);
-        next();
-      })
-      .use('end', function(ctx, next){
-        cb(null, result);
-        this.pause();
-        next();
+        if(ctx.result.i === 'foo')
+          cb(null, result);
+        setTimeout(next, Math.random() + 1);
+        // setTimeout(next, 500);
       })
       .start();
   }
 
   api.put({ i: 'foo' }, function(err, val){
     api.changeStream({since: []}).pluck('i').toArray(function(changes){
-      queue('bla', function(err, list){
+      queue('bla', 1, function(err, list){
         t.deepEqual(list, [val.i], 'durable queue list == [new item]');
       });
-      queue(null, function(err, list){
+      queue(null, 1, function(err, list){
         t.deepEqual(list, changes, 'volatile queue list == changes');
       });
     });
