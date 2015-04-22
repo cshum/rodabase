@@ -1,3 +1,4 @@
+return;
 var rodabase = require('../');
 
 var tape = require('tape');
