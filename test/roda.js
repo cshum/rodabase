@@ -77,6 +77,7 @@ tape('Tx increment', function(t){
   });
 });
 
+/*
 tape('tx count', function(t){
   t.plan(1);
   var c = roda('counts');
@@ -94,6 +95,7 @@ tape('tx count', function(t){
     });
   });
 });
+*/
 
 tape('Changes', function(t){
   t.plan(3);
