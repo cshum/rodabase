@@ -12,24 +12,26 @@ function encode(i){
   return roda.util.trim(roda.util.encode64(i));
 }
 
-tape('Queue', function(t){
-  t.plan(2);
+tape('Queue parallel', function(t){
+  t.plan(6);
   var api = roda('1');
   var tx = roda.transaction();
+  var jobs = {};
   var i;
 
-  for(i = 0; i < n; i++)
+  for(i = 0; i < n; i++){
     api.put({ i: i }, tx);
+    jobs[i] = true;
+  }
 
-  function queue(id, p, cb){
-    var result = [];
+  function queue(id, p){
+    var remain = _.clone(jobs);
     api.queue(id, p)
       .use('job', function(ctx, next){
-        result.push(ctx.result.i);
-        if(ctx.result.i === n - 1)
-          cb(null, result);
-
+        delete remain[ctx.result.i];
         setTimeout(next, Math.random() + 1);
+        if(_.size(remain) === 0)
+          t.ok(true, 'passed. name: '+id+' parallel:'+p);
         // setTimeout(next, 500);
       })
       .start();
@@ -37,12 +39,12 @@ tape('Queue', function(t){
 
   tx.commit(function(){
     api.changeStream({since: []}).pluck('i').toArray(function(changes){
-      queue('bla', 1, function(err, list){
-        t.deepEqual(list, changes, 'queue list == changes');
-      });
-      queue(null, 1, function(err, list){
-        t.deepEqual(list, changes, 'queue list == changes');
-      });
+      queue('boo', 1);
+      queue('bla', 3);
+      queue('taaa', 5);
+      queue(null, 1);
+      queue(null, 3);
+      queue(null, 5);
     });
   });
 });
