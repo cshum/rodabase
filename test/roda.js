@@ -81,16 +81,20 @@ tape('tx count', function(t){
   t.plan(1);
   var c = roda('counts');
   var tx = roda.transaction();
+  c.use('diff', function(ctx, next){
+    console.log(ctx.result);
+    setTimeout(next, 100);
+  });
 
   c.put('bob', { n: 167 }, tx);
   c.get('bob', tx, function(err, data){
     data.n++;
 
     c.put('bob', data, tx);
-    tx.commit(function(){
-      c.get('bob', function(err, val){
-        t.equal(val.n, 168, 'tx increment');
-      });
+  });
+  tx.commit(function(){
+    c.get('bob', function(err, val){
+      t.equal(val.n, 168, 'tx increment');
     });
   });
 });
@@ -129,9 +133,6 @@ tape('Changes', function(t){
 tape('Live Changes', function(t){
   t.plan(2);
   var api = roda('4');
-  // api.use('validate', function(ctx, next){
-  //   setTimeout(next, 10);
-  // });
 
   var liveChanges = [];
   var live = [];
