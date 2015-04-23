@@ -9,6 +9,10 @@ var roda = rodabase('./test/data/roda.json', {
   db: jsondown
 });
 var n = 100;
+// roda.fn.use('diff', function(ctx, next){
+//   console.log(ctx.result);
+//   setTimeout(next, 10);
+// });
 
 tape('Read lock', function(t){
   var api = roda('1');
@@ -81,10 +85,6 @@ tape('tx count', function(t){
   t.plan(1);
   var c = roda('counts');
   var tx = roda.transaction();
-  c.use('diff', function(ctx, next){
-    console.log(ctx.result);
-    setTimeout(next, 100);
-  });
 
   c.put('bob', { n: 167 }, tx);
   c.get('bob', tx, function(err, data){
