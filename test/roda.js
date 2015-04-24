@@ -19,7 +19,7 @@ roda.fn
     setTimeout(next, Math.random() * 10);
   });
 
-tape('Read lock', function(t){
+tape('Transaction: lock increment', function(t){
   var api = roda('1');
   var ok = true;
 
@@ -29,27 +29,25 @@ tape('Read lock', function(t){
     api.get('k', tx, function(err, val){
       ok &= !err;
 
-      api.put('k',{
-        k: (val ? val.k : 0) + 1
-      }, tx);
+      val = val || { k: 0 };
+      val.k++;
 
-      tx.commit();
+      api.put('k',val, tx);
     });
+    tx.commit();
   }
   for(var i = 0; i < n; i++)
     run(i);
 
   var tx = roda.transaction();
-
   api.get('k', tx, function(err, val){
     t.ok(ok, 'no error');
-    t.equal(val.k, n, 'Tx incrememnt');
+    t.equal(val.k, n, 'Incremential');
   });
-
   tx.commit();
 });
 
-tape('Tx increment', function(t){
+tape('Transaction: sequential operations', function(t){
   t.plan(4);
   var api = roda('3');
   var tx = roda.transaction();
@@ -70,24 +68,7 @@ tape('Tx increment', function(t){
   });
 });
 
-tape('tx sequential', function(t){
-  t.plan(1);
-  var c = roda('count');
-  var tx = roda.transaction();
-
-  c.put('bob', { n: 167 }, tx);
-  c.get('bob', tx, function(err, data){
-    data.n++;
-
-    c.put('bob', data, tx);
-  });
-  tx.commit(function(){
-    c.get('bob', function(err, val){
-      t.equal(val.n, 168, 'tx increment');
-    });
-  });
-});
-tape('tx isolation', function(t){
+tape('Transaction: isolation', function(t){
   t.plan(2);
   var c = roda('count2');
   var tx = roda.transaction();
@@ -113,7 +94,7 @@ tape('tx isolation', function(t){
   });
 });
 
-tape('Changes', function(t){
+tape('changeStream', function(t){
   t.plan(3);
   var api = roda('4');
   var tx = roda.transaction();
@@ -144,7 +125,7 @@ tape('Changes', function(t){
     });
   });
 });
-tape('Live Changes', function(t){
+tape('Live changeStream', function(t){
   t.plan(2);
   var api = roda('4');
 
@@ -178,7 +159,33 @@ tape('Live Changes', function(t){
   tx.commit();
 });
 
-tape('Nested Put', function(t){
+tape('Transaction Hook: Valdate', function(t){
+  t.plan(10);
+  roda('7')
+    .use('validate', function(ctx, next){
+      if(ctx.result.i % 3 === 0)
+        return next(new Error('No 3 multiple'));
+      next();
+    })
+    .use('validate', function(ctx, next){
+      if(ctx.result.i % 2 === 0)
+        return next(new Error('No 2 multiple'));
+      next();
+    });
+  var i;
+
+  for(i = 0; i < 10; i++){
+    roda('7').put({ i: i }, function(i, err, val){
+      if(i % 3 === 0 || i % 2 === 0){
+        t.notOk(val, i + ' err');
+      }else{
+        t.equal(val.i, i, i + ' value');
+      }
+    }.bind(null, i));
+  }
+});
+
+tape('Transaction hook: diff', function(t){
   t.plan(5);
   roda('5').use('diff', function(ctx, next){
     roda('5.1').put(ctx.result._id, {
@@ -223,7 +230,7 @@ tape('Nested Put', function(t){
   });
 
 });
-tape('Double Nested Put', function(t){
+tape('Transaction hook: diff 2', function(t){
   t.plan(7);
   roda('6').use('diff', function(ctx, next){
     roda('6.1').put(ctx.result._id, {
@@ -286,31 +293,6 @@ tape('Double Nested Put', function(t){
     });
   });
 
-});
-tape('Valdate', function(t){
-  t.plan(10);
-  roda('7')
-    .use('validate', function(ctx, next){
-      if(ctx.result.i % 3 === 0)
-        return next(new Error('No 3 multiple'));
-      next();
-    })
-    .use('validate', function(ctx, next){
-      if(ctx.result.i % 2 === 0)
-        return next(new Error('No 2 multiple'));
-      next();
-    });
-  var i;
-
-  for(i = 0; i < 10; i++){
-    roda('7').put({ i: i }, function(i, err, val){
-      if(i % 3 === 0 || i % 2 === 0){
-        t.notOk(val, i + ' err');
-      }else{
-        t.equal(val.i, i, i + ' value');
-      }
-    }.bind(null, i));
-  }
 });
 
 tape('Index and Range', function(t){
@@ -436,7 +418,6 @@ tape('Index and Range', function(t){
               .pluck('email').toArray(function(list){
                 t.deepEqual(list, ['hello@world.com'], 'Male age 15');
               });
-
           });
         });
       });
