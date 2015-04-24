@@ -13,11 +13,9 @@ var n = 100;
 //simulate callback delay
 roda.fn
   .use('validate', function(ctx, next){
-    // console.log(ctx.result);
     setTimeout(next, Math.random() * 10);
   })
   .use('diff', function(ctx, next){
-    // console.log(ctx.result);
     setTimeout(next, Math.random() * 10);
   });
 
@@ -49,22 +47,6 @@ tape('Read lock', function(t){
   });
 
   tx.commit();
-});
-
-tape('Increment', function(t){
-  t.plan(2);
-  var api = roda('2');
-
-  for(var i = 0; i < n; i++)
-    api.put({ i: i }, function(err, val){
-      if(val.i === n - 1){
-        api.readStream().toArray(function(list){
-          list = _.sortBy(list, 'i');
-          t.deepEqual(_.sortBy(list, '_id'), list, '_id incremental');
-          t.deepEqual(_.sortBy(list, '_rev'), list, '_rev incremental');
-        });
-      }
-    });
 });
 
 tape('Tx increment', function(t){
@@ -190,8 +172,10 @@ tape('Live Changes', function(t){
         t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
     });
 
+  var tx = roda.transaction();
   for(i = 0; i < m; i++)
-    api.put({ m:i });
+    api.put({ m:i }, tx);
+  tx.commit();
 });
 
 tape('Nested Put', function(t){
