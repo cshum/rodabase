@@ -9,10 +9,17 @@ var roda = rodabase('./test/data/roda.json', {
   db: jsondown
 });
 var n = 100;
-// roda.fn.use('diff', function(ctx, next){
-//   console.log(ctx.result);
-//   setTimeout(next, 10);
-// });
+
+//simulate callback delay
+roda.fn
+  .use('validate', function(ctx, next){
+    // console.log(ctx.result);
+    setTimeout(next, Math.random() * 10);
+  })
+  .use('diff', function(ctx, next){
+    // console.log(ctx.result);
+    setTimeout(next, Math.random() * 10);
+  });
 
 tape('Read lock', function(t){
   var api = roda('1');
@@ -81,9 +88,9 @@ tape('Tx increment', function(t){
   });
 });
 
-tape('tx count', function(t){
+tape('tx sequential', function(t){
   t.plan(1);
-  var c = roda('counts');
+  var c = roda('count');
   var tx = roda.transaction();
 
   c.put('bob', { n: 167 }, tx);
@@ -95,6 +102,31 @@ tape('tx count', function(t){
   tx.commit(function(){
     c.get('bob', function(err, val){
       t.equal(val.n, 168, 'tx increment');
+    });
+  });
+});
+tape('tx isolation', function(t){
+  t.plan(2);
+  var c = roda('count2');
+  var tx = roda.transaction();
+  var tx2 = roda.transaction();
+
+  c.put('bob', { n: 167 }, tx);
+
+
+  tx.commit(function(){
+    c.get('bob', tx2, function(err, data){
+      data.n++;
+      c.put('bob', data, tx2);
+    });
+
+    c.get('bob', function(err, val){
+      t.equal(val.n, 167, 'tx increment');
+      tx2.commit(function(){
+        c.get('bob', function(err, val){
+          t.equal(val.n, 168, 'tx increment');
+        });
+      });
     });
   });
 });
