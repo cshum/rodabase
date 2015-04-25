@@ -197,9 +197,12 @@ count.use('diff', function(ctx, next){
   next();
 });
 
-count.put('bob', { n: 6 });
-count.put('bob', { n: 8 });
-count.del('bob', function(){
+var tx = Roda.transaction();
+count.put('bob', { n: 6 }, tx);
+count.put('bob', { n: 8 }, tx);
+count.del('bob', tx);
+
+tx.commit(function(){
   log.readStream().pluck('delta').toArray(function(data){
     console.log(data); //[6, 2, -8]
   });
