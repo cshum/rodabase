@@ -10,7 +10,7 @@ var roda = rodabase('./test/data/roda.json', {
 });
 var n = 100;
 
-//simulate callback delay in transaction hooks
+//simulate inconsistent delay in transaction hooks
 roda.fn
   .use('validate', function(ctx, next){
     setTimeout(next, Math.random() * 10);
@@ -159,7 +159,7 @@ tape('Live changeStream', function(t){
   tx.commit();
 });
 
-tape('Transaction Hook: Valdate', function(t){
+tape('Transaction Hook: Validate', function(t){
   t.plan(10);
   roda('7')
     .use('validate', function(ctx, next){
