@@ -70,7 +70,7 @@ tape('Transaction: sequential operations', function(t){
 
 tape('Transaction: isolation', function(t){
   t.plan(2);
-  var c = roda('count2');
+  var c = roda('count');
   var tx = roda.transaction();
   var tx2 = roda.transaction();
 
@@ -84,10 +84,10 @@ tape('Transaction: isolation', function(t){
     });
 
     c.get('bob', function(err, val){
-      t.equal(val.n, 167, 'tx increment');
+      t.equal(val.n, 167, 'before tx2 commit');
       tx2.commit(function(){
         c.get('bob', function(err, val){
-          t.equal(val.n, 168, 'tx increment');
+          t.equal(val.n, 168, 'after tx2 commit');
         });
       });
     });
