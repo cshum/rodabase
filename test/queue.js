@@ -38,7 +38,7 @@ tape('Queue parallel', function(t){
   }
 
   tx.commit(function(){
-    api.changeStream({after: []}).pluck('i').toArray(function(changes){
+    api.changeStream({clocks: []}).pluck('i').toArray(function(changes){
       queue('boo', 1);
       queue('bla', 3);
       queue('taaa', 5);

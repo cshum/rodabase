@@ -36,15 +36,15 @@ tape('encode decode 64', function(t){
   t.end();
 });
 
-tape('clock', function(t){
+tape('clocks', function(t){
   var arr = ['01234567abc','12345678def','23456789ghi'];
   var obj = {
     '01234567':'abc',
     '12345678':'def',
     '23456789':'ghi'
   };
-  t.deepEqual(util.clockObject(arr), obj, 'clockObject');
-  t.deepEqual(util.clock(obj), arr, 'clock');
+  t.deepEqual(util.clocksObject(arr), obj, 'clocksObject');
+  t.deepEqual(util.clocks(obj), arr, 'clocks');
   t.end();
 });
 
