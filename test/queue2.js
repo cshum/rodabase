@@ -31,7 +31,7 @@ tape('Queue durable volatile', function(t){
   }
 
   api.put({ i: 'foo' }, function(err, val){
-    api.changeStream({since: []}).pluck('i').toArray(function(changes){
+    api.changeStream({after: []}).pluck('i').toArray(function(changes){
       queue('bla', 1, function(err, list){
         t.deepEqual(list, [val.i], 'durable queue list == [new item]');
       });
