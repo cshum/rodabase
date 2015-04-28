@@ -13,10 +13,10 @@ var n = 100;
 //simulate inconsistent delay in transaction hooks
 roda.fn
   .use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * 10);
+    setTimeout(next, Math.random() * 5);
   })
   .use('diff', function(ctx, next){
-    setTimeout(next, Math.random() * 10);
+    setTimeout(next, Math.random() * 5);
   });
 
 tape('Transaction: lock increment', function(t){
