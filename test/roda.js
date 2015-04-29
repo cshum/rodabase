@@ -10,6 +10,7 @@ var roda = rodabase('./test/data/roda.json', {
 });
 var n = 100;
 
+
 //simulate inconsistent delay in transaction hooks
 roda.fn
   .use('validate', function(ctx, next){
@@ -18,6 +19,33 @@ roda.fn
   .use('diff', function(ctx, next){
     setTimeout(next, Math.random() * 5);
   });
+
+tape('mergeStream', function(t){
+  t.plan(1);
+
+  var a = roda('a1');
+  var b = roda('b1');
+  var i;
+
+  var tx = roda.transaction();
+
+  for(i = 0; i < n/2; i++)
+    a.put({a:i}, tx);
+  for(i = 0; i < n/2; i++)
+    b.put({b:i}, tx);
+
+  var count = 0;
+  a.liveStream().each(function(doc){
+    count++;
+    if(count === n)
+      t.ok(true, 'mergeStream');
+  });
+  tx.commit(function(){
+    a.clockStream()
+      .pipe(b.changeStream())
+      .pipe(a.mergeStream());
+  });
+});
 
 tape('Transaction: lock increment', function(t){
   var api = roda('1');
@@ -153,33 +181,6 @@ tape('Live changeStream', function(t){
   for(i = 0; i < m; i++)
     api.put({ m:i }, tx);
   tx.commit();
-});
-
-tape('mergeStream', function(t){
-  t.plan(1);
-
-  var a = roda('a1');
-  var b = roda('b1');
-  var i;
-
-  var tx = roda.transaction();
-
-  for(i = 0; i < n; i++)
-    a.put({a:i}, tx);
-  for(i = 0; i < n; i++)
-    b.put({b:i}, tx);
-
-  var count = 0;
-  a.liveStream().each(function(doc){
-    console.log(doc);
-    count++;
-    if(count === n * 2){
-      t.ok(true, 'mergeStream');
-    }
-  });
-  tx.commit(function(){
-    a.clockStream().pipe(b.changeStream()).pipe(a.mergeStream());
-  });
 });
 
 tape('Transaction Hook: Validate', function(t){
