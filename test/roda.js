@@ -20,6 +20,7 @@ roda.fn
     setTimeout(next, Math.random() * 5);
   });
 
+  /*
 tape('mergeStream', function(t){
   t.plan(1);
 
@@ -36,6 +37,7 @@ tape('mergeStream', function(t){
 
   var count = 0;
   a.liveStream().each(function(doc){
+    console.log(doc);
     count++;
     if(count === n)
       t.ok(true, 'mergeStream');
@@ -46,6 +48,7 @@ tape('mergeStream', function(t){
       .pipe(a.mergeStream());
   });
 });
+*/
 
 tape('Transaction: lock increment', function(t){
   var api = roda('1');
