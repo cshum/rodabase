@@ -36,8 +36,8 @@ tape('mergeStream', function(t){
 
   var count = 0;
   a.liveStream().each(function(doc){
-    console.log(doc);
     count++;
+    // console.log(doc, count, n);
     if(count === n)
       t.ok(true, 'mergeStream');
   });
