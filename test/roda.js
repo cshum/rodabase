@@ -101,14 +101,14 @@ tape('changeStream', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    api.put(roda.util.time64(i), { i: i }, tx);
+    api.put(roda.util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    api.put(roda.util.time64(i), { i: i }, tx); //redundant put
+    api.put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.time64(i), tx);
+    api.del(roda.util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.time64(i), tx); //non-exist del
+    api.del(roda.util.encodeNumber(i), tx); //non-exist del
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -193,16 +193,16 @@ tape('Transaction hook: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('5').put(roda.util.time64(i), { i: i }, tx);
+    roda('5').put(roda.util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('5').put(roda.util.time64(i), { i: i }, tx); //redundant put
+    roda('5').put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    roda('5').del(roda.util.time64(i), tx);
+    roda('5').del(roda.util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    roda('5').del(roda.util.time64(i), tx); //non-exist del
+    roda('5').del(roda.util.encodeNumber(i), tx); //non-exist del
   for(i = 0; i < n; i+=2)
-    roda('5.1').del(roda.util.time64(i), tx);
+    roda('5.1').del(roda.util.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -247,16 +247,16 @@ tape('Transaction hook: diff 2', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('6').put(roda.util.time64(i), { i: i }, tx);
+    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('6').put(roda.util.time64(i), { i: i }, tx); //redundant put
+    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    roda('6').del(roda.util.time64(i), tx);
+    roda('6').del(roda.util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    roda('6').del(roda.util.time64(i), tx); //non-exist del
+    roda('6').del(roda.util.encodeNumber(i), tx); //non-exist del
   for(i = 0; i < n; i+=2)
-    roda('6.1').del(roda.util.time64(i), tx);
+    roda('6.1').del(roda.util.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');

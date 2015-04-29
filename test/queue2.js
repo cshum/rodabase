@@ -8,9 +8,6 @@ var roda = rodabase('./test/data/queue.json', {
   db: jsondown
 });
 var n = 100;
-function encode(i){
-  return roda.util.trim(roda.util.encode64(i));
-}
 
 tape('Queue durable volatile', function(t){
   t.plan(2);
