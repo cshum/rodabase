@@ -155,6 +155,33 @@ tape('Live changeStream', function(t){
   tx.commit();
 });
 
+tape('mergeStream', function(t){
+  t.plan(1);
+
+  var a = roda('a1');
+  var b = roda('b1');
+  var i;
+
+  var tx = roda.transaction();
+
+  for(i = 0; i < n; i++)
+    a.put({a:i}, tx);
+  for(i = 0; i < n; i++)
+    b.put({b:i}, tx);
+
+  var count = 0;
+  a.liveStream().each(function(doc){
+    console.log(doc);
+    count++;
+    if(count === n * 2){
+      t.ok(true, 'mergeStream');
+    }
+  });
+  tx.commit(function(){
+    a.clockStream().pipe(b.changeStream()).pipe(a.mergeStream());
+  });
+});
+
 tape('Transaction Hook: Validate', function(t){
   t.plan(10);
   roda('7')
@@ -412,4 +439,3 @@ tape('Index and Range', function(t){
     });
   });
 });
-
