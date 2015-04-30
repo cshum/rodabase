@@ -45,7 +45,6 @@ tape('mergeStream', function(t){
       t.ok(true, 'mergeStream');
   });
   c.liveStream().each(function(doc){
-    // console.log('c',doc, count.c);
     count.c++;
     if(count.c === n)
       t.ok(true, 'live mergeStream');
@@ -56,7 +55,6 @@ tape('mergeStream', function(t){
     .pipe(c.mergeStream());
 
   d.liveStream().each(function(doc){
-    // console.log('d',doc, count.d);
     count.d++;
     if(count.d === n)
       t.ok(true, 'mutli mergeStream');
