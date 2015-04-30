@@ -21,8 +21,8 @@ roda.fn
   });
 
 tape('mergeStream', function(t){
-  t.plan(2);
-  // t.plan(3);
+  // t.plan(2);
+  t.plan(3);
 
   var a = roda('a1');
   var b = roda('b1');
@@ -48,7 +48,7 @@ tape('mergeStream', function(t){
       t.ok(true, 'mergeStream');
   });
   c.liveStream().each(function(doc){
-    // console.log('c',doc, count.c);
+    console.log('c',doc, count.c);
     count.c++;
     if(count.c === n)
       t.ok(true, 'live mergeStream');
@@ -61,7 +61,6 @@ tape('mergeStream', function(t){
   d.liveStream().each(function(doc){
     console.log('d',doc, count.d);
     count.d++;
-    return;
     if(count.d === n)
       t.ok(true, 'mutli mergeStream');
   });
