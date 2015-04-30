@@ -21,10 +21,12 @@ roda.fn
   });
 
 tape('mergeStream', function(t){
-  t.plan(1);
+  t.plan(3);
 
   var a = roda('a1');
   var b = roda('b1');
+  var c = roda('c1');
+  var d = roda('d1');
   var i;
 
   var tx = roda.transaction();
@@ -34,13 +36,41 @@ tape('mergeStream', function(t){
   for(i = 0; i < n/2; i++)
     b.put({b:i}, tx);
 
-  var count = 0;
+  var count = {
+    a: 0,
+    c: 0,
+    d: 0
+  };
   a.liveStream().each(function(doc){
-    count++;
-    // console.log(doc, count, n);
-    if(count === n)
+    count.a++;
+    if(count.a === n)
       t.ok(true, 'mergeStream');
   });
+  c.liveStream().each(function(doc){
+    // console.log('c',doc, count.c);
+    count.c++;
+    if(count.c === n)
+      t.ok(true, 'live mergeStream');
+  });
+  d.liveStream().each(function(doc){
+    // console.log('d',doc, count.d);
+    count.d++;
+    if(count.d === n)
+      t.ok(true, 'stress mergeStream');
+  });
+
+  c.clockStream()
+    .pipe(a.changeStream({live: true}))
+    .pipe(c.mergeStream());
+
+  for(i = 0; i < 3; i++){
+    [a, b, c].forEach(function(s){
+      d.clockStream()
+        .pipe(s.changeStream({live: true}))
+        .pipe(d.mergeStream());
+    });
+  }
+
   tx.commit(function(){
     a.clockStream()
       .pipe(b.changeStream())
