@@ -8,9 +8,9 @@ var H = require('highland');
 var roda = rodabase('./test/data/roda.json', {
   db: jsondown
 });
-var n = 100;
+var n = 50;
 
-//simulate inconsistent delay in transaction hooks
+//simulate inconsistent delay
 roda.fn
   .use('validate', function(ctx, next){
     setTimeout(next, Math.random() * 5);
@@ -18,60 +18,6 @@ roda.fn
   .use('diff', function(ctx, next){
     setTimeout(next, Math.random() * 5);
   });
-
-tape('mergeStream', function(t){
-  // t.plan(2);
-  t.plan(3);
-
-  var a = roda('a1');
-  var b = roda('b1');
-  var c = roda('c1');
-  var d = roda('d1');
-  var i;
-
-  var tx = roda.transaction();
-
-  for(i = 0; i < n/2; i++)
-    a.put({a:i}, tx);
-  for(i = 0; i < n/2; i++)
-    b.put({b:i}, tx);
-
-  var count = {
-    a: 0, c: 0, d: 0
-  };
-  a.liveStream().each(function(doc){
-    count.a++;
-    if(count.a === n)
-      t.ok(true, 'mergeStream');
-  });
-  c.liveStream().each(function(doc){
-    count.c++;
-    if(count.c === n)
-      t.ok(true, 'live mergeStream');
-  });
-
-  c.clockStream()
-    .pipe(a.changeStream({live: true}))
-    .pipe(c.mergeStream());
-
-  d.liveStream().each(function(doc){
-    count.d++;
-    if(count.d === n)
-      t.ok(true, 'mutli mergeStream');
-  });
-
-  [a, b, c, b, a, c].forEach(function(s){
-    d.clockStream()
-      .pipe(s.changeStream({live: true}))
-      .pipe(d.mergeStream());
-  });
-
-  tx.commit(function(){
-    a.clockStream()
-      .pipe(b.changeStream())
-      .pipe(a.mergeStream());
-  });
-});
 
 tape('Transaction: lock increment', function(t){
   var api = roda('1');
@@ -466,3 +412,57 @@ tape('Index and Range', function(t){
     });
   });
 });
+
+tape('mergeStream', function(t){
+  t.plan(3);
+
+  var a = roda('a1');
+  var b = roda('b1');
+  var c = roda('c1');
+  var d = roda('d1');
+  var i;
+
+  var tx = roda.transaction();
+
+  for(i = 0; i < n/2; i++)
+    a.put({a:i}, tx);
+  for(i = 0; i < n/2; i++)
+    b.put({b:i}, tx);
+
+  var count = {
+    a: 0, c: 0, d: 0
+  };
+  a.liveStream().each(function(doc){
+    count.a++;
+    if(count.a === n)
+      t.ok(true, 'mergeStream');
+  });
+  c.liveStream().each(function(doc){
+    count.c++;
+    if(count.c === n)
+      t.ok(true, 'live mergeStream');
+  });
+
+  c.clockStream()
+    .pipe(a.changeStream({live: true}))
+    .pipe(c.mergeStream());
+
+  d.liveStream().each(function(doc){
+    count.d++;
+    if(count.d === n)
+      t.ok(true, 'mutli mergeStream');
+  });
+
+  [a, b, c, b, a, c].forEach(function(s){
+    d.clockStream()
+      .pipe(s.changeStream({live: true}))
+      .pipe(d.mergeStream());
+  });
+
+  tx.commit(function(){
+    a.clockStream()
+      .pipe(b.changeStream())
+      .pipe(a.mergeStream());
+  });
+});
+
