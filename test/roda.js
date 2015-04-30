@@ -10,7 +10,6 @@ var roda = rodabase('./test/data/roda.json', {
 });
 var n = 100;
 
-
 //simulate inconsistent delay in transaction hooks
 roda.fn
   .use('validate', function(ctx, next){
@@ -38,9 +37,7 @@ tape('mergeStream', function(t){
     b.put({b:i}, tx);
 
   var count = {
-    a: 0,
-    c: 0,
-    d: 0
+    a: 0, c: 0, d: 0
   };
   a.liveStream().each(function(doc){
     count.a++;
@@ -48,7 +45,7 @@ tape('mergeStream', function(t){
       t.ok(true, 'mergeStream');
   });
   c.liveStream().each(function(doc){
-    console.log('c',doc, count.c);
+    // console.log('c',doc, count.c);
     count.c++;
     if(count.c === n)
       t.ok(true, 'live mergeStream');
@@ -59,13 +56,13 @@ tape('mergeStream', function(t){
     .pipe(c.mergeStream());
 
   d.liveStream().each(function(doc){
-    console.log('d',doc, count.d);
+    // console.log('d',doc, count.d);
     count.d++;
     if(count.d === n)
       t.ok(true, 'mutli mergeStream');
   });
 
-  [a, b, c].forEach(function(s){
+  [a, b, c, b, a, c].forEach(function(s){
     d.clockStream()
       .pipe(s.changeStream({live: true}))
       .pipe(d.mergeStream());
