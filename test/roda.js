@@ -453,7 +453,7 @@ tape('mergeStream', function(t){
       t.ok(true, 'mutli mergeStream');
   });
 
-  [a, b, c, b, a, c].forEach(function(s){
+  [a, b, c, d, b, a, c].forEach(function(s){
     d.clockStream()
       .pipe(s.changeStream({live: true}))
       .pipe(d.mergeStream());
