@@ -450,14 +450,16 @@ tape('mergeStream', function(t){
   d.liveStream().each(function(doc){
     count.d++;
     if(count.d === n)
-      t.ok(true, 'mutli mergeStream');
+      t.ok(true, 'mutli pipe');
   });
 
-  [a, b, c, d, b, a, c].forEach(function(s){
-    d.clockStream()
-      .pipe(s.changeStream({live: true}))
-      .pipe(d.mergeStream());
-  });
+  a.pipe(d);
+  b.pipe(d);
+  c.pipe(d);
+  d.pipe(d);
+  b.pipe(d);
+  a.pipe(d);
+  c.pipe(d);
 
   tx.commit(function(){
     a.clockStream()
