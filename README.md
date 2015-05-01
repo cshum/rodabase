@@ -26,16 +26,17 @@ $ npm install rodabase leveldown
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.index(name, mapper)](#indexname-mapper)
-  - [.readStream([index], [options])](#readstreamindex-options)
+  - [.readStream([options])](#readstreamoptions)
 - [Transaction](#transaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
   - [roda.transaction()](#rodatransaction)
-- [Changes](#changes)
-  - [.clockStream()](#clockstream)
-  - [.changeStream()](#changestream)
+- [Replication](#replication)
   - [.liveStream()](#livestream)
-  - [.queueStream()](#queuestream)
+  - [.clockStream()](#clockstream)
+  - [.changeStream([options])](#changestreamoptions)
+  - [.mergeStream()](#mergestream)
+  - [.pipe()](#pipe)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -238,12 +239,13 @@ count.get('bob', transaction, function(err, data){
 });
 ```
 
-###Changes
+###Replication
 
 ####.liveStream()
 ####.clockStream()
 ####.changeStream([options])
 ####.mergeStream()
+####.pipe()
 ```js
 var a = roda('a');
 var b = roda('b');
