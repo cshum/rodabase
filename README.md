@@ -27,12 +27,12 @@ $ npm install rodabase leveldown
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.index(name, mapper)](#indexname-mapper)
   - [.readStream([options])](#readstreamoptions)
+  - [.liveStream()](#livestream)
 - [Transaction](#transaction)
+  - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-  - [roda.transaction()](#rodatransaction)
 - [Replication](#replication)
-  - [.liveStream()](#livestream)
   - [.clockStream()](#clockstream)
   - [.changeStream([options])](#changestreamoptions)
   - [.mergeStream()](#mergestream)
@@ -124,17 +124,49 @@ users.readStream({ index: 'age', gt: 15 }); //users over age 15
   * `lt`
   * `lte`
   * `eq`
+####.liveStream()
 
 ###Transaction
 
 Rodabase manages transaction states in asynchronous, isolated manner. Rodabase is ACID compliant:
 
-* **Atomicity**: Transactions complete either entirely or no effect at all. Made possible thanks to atomic [batch](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) operations in LevelDB.
-* **Consistency**: Rodabase features "transaction hooks", allowing fine-grain control over data integrity, validations, logging, consistently throughout the application. With a very simple API.
+* **Atomicity**: Transactions complete either entirely or no effect at all. Inherent feature of [batched operations](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) in LevelDB.
+* **Consistency**: Rodabase allows fine-grain control over data integrity, validations, logging, consistently throughout the application.
 * **Isolation**: States of transactions are isolated until successful commits.
 * **Durability**: Committed transactions are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) as a LevelDB option.
 
-This enables non-blocking, strong consistent way of dealing with data.
+####roda.transaction()
+
+Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
+Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
+Example below demonstrates isolation in transaction instance. 
+
+```js
+var count = roda('count');
+
+//create transaction instance
+var tx = roda.transaction(); 
+var tx2 = roda.transaction();
+
+count.put('foo', { n: 167 }, tx);
+
+tx.commit(function(){
+  tx2.get('foo', tx, function(err, doc){
+    doc.n++;
+    tx2.put('foo', doc, tx);
+  });
+
+  count.get('foo', function(err, doc){
+    //doc.n equals to 167
+    tx2.commit(function(){
+      count.get('foo', function(err, doc){
+        //doc.n equals to 168
+      });
+    });
+  });
+});
+
+```
 
 Under the hood, each write in Rodabase consists of multiple, transactional reads and writes in LevelDB,
 This can be described as following steps:
@@ -161,18 +193,17 @@ var people = roda('people');
 people.use('validate', function(ctx, next){
   if(typeof ctx.result.name !== 'string')
     return next(new Error('Name must be a string.'));
-
   //modify result
   ctx.result.name = ctx.result.name.toUpperCase();
-
   next();
 });
 
 people.put({ name: 123 }, function(err, val){
   console.log(err); //Error: Name must be a string.
-});
-people.put({ name: 'bar' }, function(err, val){
-  console.log(val.name); //BAR
+
+  people.put({ name: 'bar' }, function(err, val){
+    console.log(val.name); //BAR
+  });
 });
 ```
 
@@ -211,37 +242,8 @@ tx.commit(function(){
   });
 });
 ```
-####roda.transaction()
-
-Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
-Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
-Example below demonstrates isolation in transaction instance. 
-
-```js
-var count = roda('count');
-var transaction = roda.transaction(); //create transaction instance
-
-count.put('bob', { n: 167 });
-
-count.get('bob', transaction, function(err, data){
-  data.n++; //increment n by 1
-  count.put('bob', data, transaction);
-
-  count.get('bob', function(err, val){
-    console.log(val.n); //equals 167
-
-    transaction.commit(function(){
-      count.get('bob', function(err, val){
-        console.log(val.n); //equals 168
-      });
-    });
-  });
-});
-```
 
 ###Replication
-
-####.liveStream()
 ####.clockStream()
 ####.changeStream([options])
 ####.mergeStream()
