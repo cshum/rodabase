@@ -144,23 +144,24 @@ Example below demonstrates isolation in transaction instance.
 ```js
 var count = roda('count');
 
-//create transaction instance
+//create transaction instances
 var tx = roda.transaction(); 
 var tx2 = roda.transaction();
 
 count.put('foo', { n: 167 }, tx);
 
 tx.commit(function(){
-  tx2.get('foo', tx, function(err, doc){
+  //tx2 increments n
+  count.get('foo', tx2, function(err, doc){
     doc.n++;
-    tx2.put('foo', doc, tx);
+    count.put('foo', doc, tx2);
   });
 
   count.get('foo', function(err, doc){
-    //doc.n equals to 167
+    //doc.n equals 167
     tx2.commit(function(){
       count.get('foo', function(err, doc){
-        //doc.n equals to 168
+        //doc.n equals 168
       });
     });
   });
