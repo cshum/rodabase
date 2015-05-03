@@ -20,27 +20,32 @@ $ npm install rodabase leveldown
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ##API
 
-- [rodabase(path[, options])](#rodabasepath-options)
-- [roda(name)](#rodaname)
+- [Basic Usage](#basic-usage)
+  - [rodabase(path, [options])](#rodabasepath-options)
+  - [roda(name)](#rodaname)
   - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
+- [Index](#index)
   - [.index(name, mapper)](#indexname-mapper)
   - [.readStream([options])](#readstreamoptions)
-  - [.liveStream()](#livestream)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-- [Replication](#replication)
+- [Changes](#changes)
   - [.clockStream()](#clockstream)
+  - [.liveStream()](#livestream)
   - [.changeStream([options])](#changestreamoptions)
+- [Replication](#replication)
   - [.mergeStream()](#mergestream)
   - [.pipe()](#pipe)
+  - [.use('conflict', [hook...])](#useconflict-hook)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-###rodabase(path[, options])
+###Basic Usage
+####rodabase(path, [options])
 
 ```js
 var rodabase = require('rodabase');
@@ -48,7 +53,7 @@ var rodabase = require('rodabase');
 var roda = rodabase('./db');
 ```
 
-###roda(name)
+####roda(name)
 
 All operations are asynchronous although they don't necessarily require a callback.
 
@@ -99,6 +104,7 @@ Removes data from Rodabase.
 * `id`: Primary key under the namespace. Must be a string.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
+###Index
 ####.index(name, mapper)
 #####emit(key, [doc], [unique])
 
@@ -124,7 +130,6 @@ users.readStream({ index: 'age', gt: 15 }); //users over age 15
   * `lt`
   * `lte`
   * `eq`
-####.liveStream()
 
 ###Transaction
 
@@ -244,9 +249,27 @@ tx.commit(function(){
 });
 ```
 
-###Replication
+###Changes
+
+Causal consistency ensures operations appear in the order the user intuitively expects. Three rules define potential causality:
+
+1. **Execution Thread**: If `a` and `b` are two operations within a transaction, `a ~ b` if operation `a` happens before operation `b`.
+2. **Gets From**: If `a` is a put operation and `b` is a get operation that returns the value written by a, then `a ~ b`.
+3. **Transitivity**: For operations `a`, `b`, and `c`, if `a ~ b` and `b ~ c`, then `a ~ c`. Thus, the causal relationship between operations is the transitive closure of the first two rules.
+
+
 ####.clockStream()
+
+Readable stream for [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps) of the Roda.
+Everytime a write operation is committed its logical clock is incremented.
+In order to
+`clockStream()` indicates 
+
+
+####.liveStream()
 ####.changeStream([options])
+
+###Replication
 ####.mergeStream()
 ####.pipe()
 ```js
@@ -254,3 +277,4 @@ var a = roda('a');
 var b = roda('b');
 b.clockStream().pipe(a.changeStream()).pipe(b.mergeStream());
 ```
+####.use('conflict', [hook...])
