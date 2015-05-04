@@ -20,7 +20,7 @@ $ npm install rodabase leveldown
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ##API
 
-- [Basic Usage](#basic-usage)
+- [Basics](#basics)
   - [rodabase(path, [options])](#rodabasepath-options)
   - [roda(name)](#rodaname)
   - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
@@ -39,12 +39,12 @@ $ npm install rodabase leveldown
   - [.changeStream([options])](#changestreamoptions)
 - [Replication](#replication)
   - [.mergeStream()](#mergestream)
-  - [.pipe()](#pipe)
   - [.use('conflict', [hook...])](#useconflict-hook)
+  - [.pipe(roda)](#piperoda)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-###Basic Usage
+###Basics
 ####rodabase(path, [options])
 
 ```js
@@ -271,10 +271,18 @@ In order to
 
 ###Replication
 ####.mergeStream()
-####.pipe()
 ```js
 var a = roda('a');
 var b = roda('b');
 b.clockStream().pipe(a.changeStream()).pipe(b.mergeStream());
 ```
 ####.use('conflict', [hook...])
+####.pipe(roda)
+```js
+//equivalent
+roda('a').pipe('b');
+roda('a').pipe(roda('b'));
+roda('b').clockStream()
+  .pipe(roda('a').changeStream({live: true}))
+  .pipe(roda('b').mergeStream());
+```
