@@ -22,7 +22,7 @@
     "bytewise": "^0.7.1",
     "d64": "^1.0.0",
     "ginga": "^0.1.7",
-    "level-async-transaction": "^0.2.5",
+    "level-async-transaction": "^0.2.6",
     "level-sublevel": "^6.3.15",
     "highland": "^2.4.0",
     "levelup": "^0.19.0"
