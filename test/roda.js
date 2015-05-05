@@ -4,7 +4,7 @@ var tape = require('tape');
 var _ = require('underscore');
 var H = require('highland');
 
-var roda = rodabase('./test/data/db', {
+var roda = rodabase('./test/db', {
   // db: require('jsondown')
 });
 var n = 50;

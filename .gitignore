@@ -3,4 +3,5 @@ node_modules
 *.swp
 npm-debug.log
 test/data
+test/db
 test.js
