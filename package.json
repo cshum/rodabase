@@ -30,6 +30,7 @@
   "devDependencies": {
     "underscore": "^1.7.0",
     "jsondown": "^0.1.1",
-    "tape": "^3.0.2"
+    "tape": "^3.0.2",
+    "leveldown": "^0.10.0"
   }
 }

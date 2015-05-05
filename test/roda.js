@@ -1,12 +1,11 @@
 var rodabase = require('../');
 
 var tape = require('tape');
-var jsondown = require('jsondown');
 var _ = require('underscore');
 var H = require('highland');
 
-var roda = rodabase('./test/data/roda.json', {
-  db: jsondown
+var roda = rodabase('./test/data/db', {
+  // db: require('jsondown')
 });
 var n = 50;
 
