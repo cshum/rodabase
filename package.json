@@ -29,9 +29,11 @@
     "randombytes": "^2.0.1"
   },
   "devDependencies": {
-    "underscore": "^1.7.0",
+    "bundle-collapser": "^1.1.4",
+    "es5-shim": "^4.1.1",
     "jsondown": "^0.1.1",
+    "leveldown": "^0.10.0",
     "tape": "^3.0.2",
-    "leveldown": "^0.10.0"
+    "underscore": "^1.7.0"
   }
 }
