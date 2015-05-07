@@ -10,6 +10,15 @@ var roda = rodabase('./test/db', {
 var util = roda.util;
 var n = 100;
 
+//simulate inconsistent delay
+roda.fn
+  .use('validate', function(ctx, next){
+    setTimeout(next, Math.random() * 5);
+  })
+  .use('diff', function(ctx, next){
+    setTimeout(next, Math.random() * 5);
+  });
+
 tape('encode decode', function(t){
   var lex = true;
   var id = true;
@@ -68,15 +77,6 @@ tape('timestamp', function(t){
   t.ok(ok, 'monotonic');
   t.end();
 });
-
-//simulate inconsistent delay
-roda.fn
-  .use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
-  })
-  .use('diff', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
-  });
 
 tape('Transaction: lock increment', function(t){
   var api = roda('1');
