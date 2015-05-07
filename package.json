@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Node.js transactional document store, built on LevelDB.",
   "scripts": {
-    "test": "set -e; rm -rf test/db; for t in test/*.js; do node $t; done;"
+    "test": "set -e; rm -rf test/db; node test/test.js;"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "jsondown": "^0.1.1",
+    "level-js": "^2.1.6",
     "leveldown": "^0.10.0",
     "tape": "^3.0.2",
     "underscore": "^1.7.0"
