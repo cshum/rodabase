@@ -342,7 +342,7 @@ tape('Transaction hook: diff 2', function(t){
 });
 
 tape('Index and Range', function(t){
-  t.plan(71);
+  t.plan(21 + n);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
