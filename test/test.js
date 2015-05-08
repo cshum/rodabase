@@ -8,6 +8,7 @@ if(process.browser)
   indexedDB.deleteDatabase('IDBWrapper-./test/db');
 
 var roda = rodabase('./test/db', {
+  ttl: 60 * 1000
   // db: require('jsondown')
 });
 var util = roda.util;
