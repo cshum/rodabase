@@ -15,7 +15,6 @@ var roda = rodabase('./test/db', {
   // db: require('jsondown')
 });
 var util = roda.util;
-// var n = 50;
 var n = 50;
 
 //simulate inconsistent delay
@@ -507,9 +506,7 @@ tape('mergeStream', function(t){
       t.ok(true, 'live mergeStream');
   });
 
-  c.clockStream()
-    .pipe(a.changeStream({live: true}))
-    .pipe(c.mergeStream());
+  a.pipe(c);
 
   d.liveStream().each(function(doc){
     count.d++;
