@@ -4,6 +4,9 @@ var tape = require('tape');
 var _ = require('underscore');
 var H = require('highland');
 
+if(process.browser)
+  indexedDB.deleteDatabase('IDBWrapper-./test/db');
+
 var roda = rodabase('./test/db', {
   // db: require('jsondown')
 });
