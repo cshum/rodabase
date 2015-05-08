@@ -12,16 +12,15 @@ var roda = rodabase('./test/db', {
   // db: require('jsondown')
 });
 var util = roda.util;
-var n = 100;
+var n = 50;
 
 //simulate inconsistent delay
-var delayN = 5;
 roda.fn
   .use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * delayN);
+    setTimeout(next, Math.random() * 5);
   })
   .use('diff', function(ctx, next){
-    setTimeout(next, Math.random() * delayN);
+    setTimeout(next, Math.random() * 5);
   });
 
 tape('encode decode', function(t){
