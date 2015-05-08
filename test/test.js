@@ -16,7 +16,7 @@ var roda = rodabase('./test/db', {
 });
 var util = roda.util;
 // var n = 50;
-var n = 100;
+var n = 50;
 
 //simulate inconsistent delay
 roda.fn
