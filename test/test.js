@@ -342,7 +342,7 @@ tape('Transaction hook: diff 2', function(t){
 });
 
 tape('Index and Range', function(t){
-  t.plan(31);
+  t.plan(71);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -368,9 +368,9 @@ tape('Index and Range', function(t){
     this.put({ email: 'adrian@cshum.com', age: 25, gender:'M' }, function(err, val){
       t.equal(val.email, 'adrian@cshum.com', 'Email Saved');
 
-      for(var i = 0; i < 10; i++){
+      for(var i = 0; i < n; i++){
         this.put({ email: 'adrian@cshum.com' }, function(err, val){
-          t.ok(err.keyExists, 'Repeated Email');
+          t.ok(err.keyExists, 'Repeated');
         });
       }
 
