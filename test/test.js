@@ -15,6 +15,7 @@ var util = roda.util;
 var n = 100;
 
 //simulate inconsistent delay
+/*
 roda.fn
   .use('validate', function(ctx, next){
     setTimeout(next, Math.random() * 5);
@@ -22,6 +23,7 @@ roda.fn
   .use('diff', function(ctx, next){
     setTimeout(next, Math.random() * 5);
   });
+  */
 
 tape('encode decode', function(t){
   var lex = true;
