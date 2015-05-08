@@ -476,7 +476,7 @@ tape('Index and Range', function(t){
   });
 });
 
-tape('mergeStream', function(t){
+tape('pipes', function(t){
   t.plan(3);
 
   var a = roda('a1');
@@ -498,21 +498,22 @@ tape('mergeStream', function(t){
   a.liveStream().each(function(doc){
     count.a++;
     if(count.a === n)
-      t.ok(true, 'mergeStream');
+      t.ok(true, 'b pipe a');
   });
   c.liveStream().each(function(doc){
     count.c++;
-    if(count.c === n)
-      t.ok(true, 'live mergeStream');
+    if(count.c === n){
+      t.ok(true, 'a pipe c');
+    }
   });
-
-  a.pipe(c);
-
   d.liveStream().each(function(doc){
     count.d++;
     if(count.d === n)
       t.ok(true, 'mutli pipe');
   });
+
+  b.pipe(a);
+  a.pipe(c);
 
   a.pipe(d);
   b.pipe(d);
@@ -522,10 +523,6 @@ tape('mergeStream', function(t){
   a.pipe(d);
   c.pipe(d);
 
-  tx.commit(function(){
-    a.clockStream()
-      .pipe(b.changeStream())
-      .pipe(a.mergeStream());
-  });
+  tx.commit();
 });
 
