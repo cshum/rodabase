@@ -30,7 +30,8 @@
     "levelup": "^0.19.0",
     "randombytes": "^2.0.1",
     "extend": "^2.0.1",
-    "setimmediate": "^1.0.2"
+    "setimmediate": "^1.0.2",
+    "indexeddbshim": "^2.0.1"
   },
   "devDependencies": {
     "jsondown": "^0.1.1",

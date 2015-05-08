@@ -4,15 +4,19 @@ var tape = require('tape');
 var _ = require('underscore');
 var H = require('highland');
 
-if(process.browser)
-  indexedDB.deleteDatabase('IDBWrapper-./test/db');
+if(process.browser){
+  var idb = window.indexedDB || window.mozIndexedDB || 
+    window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
+  idb.deleteDatabase('IDBWrapper-./test/db');
+}
 
 var roda = rodabase('./test/db', {
   ttl: 60 * 1000
   // db: require('jsondown')
 });
 var util = roda.util;
-var n = 50;
+// var n = 50;
+var n = 100;
 
 //simulate inconsistent delay
 roda.fn
