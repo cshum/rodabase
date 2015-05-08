@@ -25,16 +25,15 @@
     "ginga": "^0.1.7",
     "level-async-transaction": "^0.2.7",
     "level-sublevel": "^6.3.15",
+    "level-js": "^2.1.6",
     "highland": "^2.4.0",
     "levelup": "^0.19.0",
     "randombytes": "^2.0.1",
-    "level-js": "^2.1.6",
     "extend": "^2.0.1",
     "setimmediate": "^1.0.2"
   },
   "devDependencies": {
     "jsondown": "^0.1.1",
-    "level-js": "^2.1.6",
     "leveldown": "^0.10.0",
     "tape": "^3.0.2",
     "underscore": "^1.7.0"
