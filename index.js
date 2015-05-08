@@ -1,8 +1,8 @@
 //shim
-if(process.browser){
+if(process.browser)
   require("indexeddbshim");
-  require("setimmediate");
-}
+
+require("setimmediate");
 
 if (!Object.is) {
   Object.is = function(v1, v2) {
