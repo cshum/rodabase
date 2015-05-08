@@ -36,6 +36,7 @@ tape('encode decode', function(t){
   t.ok(id, 'identical');
   t.end();
 });
+
 tape('encode decode number', function(t){
   var lex = true;
   var id = true;
@@ -160,14 +161,14 @@ tape('changeStream', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    api.put(roda.util.encodeNumber(i), { i: i }, tx);
+    api.put(util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    api.put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
+    api.put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.encodeNumber(i), tx);
+    api.del(util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.encodeNumber(i), tx); //non-exist del
+    api.del(util.encodeNumber(i), tx); //non-exist del
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -196,12 +197,6 @@ tape('Live changeStream', function(t){
     });
 
   api.changeStream({clocks: [], live: true})
-    // .map(H.wrapCallback(function(data, cb){
-    //   setTimeout(function(){
-    //     console.log(data);
-    //     cb(null, data);
-    //   },50);
-    // })).parallel(1)
     .each(function(data){
       liveChanges.push(data);
       if(data.m === m - 1)
@@ -252,16 +247,16 @@ tape('Transaction hook: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('5').put(roda.util.encodeNumber(i), { i: i }, tx);
+    roda('5').put(util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('5').put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
+    roda('5').put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    roda('5').del(roda.util.encodeNumber(i), tx);
+    roda('5').del(util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    roda('5').del(roda.util.encodeNumber(i), tx); //non-exist del
+    roda('5').del(util.encodeNumber(i), tx); //non-exist del
   for(i = 0; i < n; i+=2)
-    roda('5.1').del(roda.util.encodeNumber(i), tx);
+    roda('5.1').del(util.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -306,16 +301,16 @@ tape('Transaction hook: diff 2', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx);
+    roda('6').put(util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
+    roda('6').put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    roda('6').del(roda.util.encodeNumber(i), tx);
+    roda('6').del(util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    roda('6').del(roda.util.encodeNumber(i), tx); //non-exist del
+    roda('6').del(util.encodeNumber(i), tx); //non-exist del
   for(i = 0; i < n; i+=2)
-    roda('6.1').del(roda.util.encodeNumber(i), tx);
+    roda('6.1').del(util.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
