@@ -15,15 +15,14 @@ var util = roda.util;
 var n = 100;
 
 //simulate inconsistent delay
-/*
+var delayN = 5;
 roda.fn
   .use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
+    setTimeout(next, Math.random() * delayN);
   })
   .use('diff', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
+    setTimeout(next, Math.random() * delayN);
   });
-  */
 
 tape('encode decode', function(t){
   var lex = true;
