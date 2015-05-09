@@ -485,32 +485,33 @@ tape('pipes', function(t){
   var d = roda('d1');
   var i;
 
-  var tx = roda.transaction();
-
-  for(i = 0; i < n/2; i++)
-    a.put({a:i}, tx);
-  for(i = 0; i < n/2; i++)
-    b.put({b:i}, tx);
-
   var count = {
     a: 0, c: 0, d: 0
   };
   a.liveStream().each(function(doc){
     count.a++;
+    // console.log(count);
     if(count.a === n)
       t.ok(true, 'b pipe a');
   });
   c.liveStream().each(function(doc){
     count.c++;
+    // console.log(count);
     if(count.c === n){
       t.ok(true, 'a pipe c');
     }
   });
   d.liveStream().each(function(doc){
     count.d++;
+    // console.log(count);
     if(count.d === n)
-      t.ok(true, 'mutli pipe');
+      t.ok(true, 'sink');
   });
+
+  for(i = 0; i < n/2; i++)
+    a.put({a:i});
+  for(i = 0; i < n/2; i++)
+    b.put({b:i});
 
   b.pipe(a);
   a.pipe(c);
@@ -523,6 +524,5 @@ tape('pipes', function(t){
   a.pipe(d);
   c.pipe(d);
 
-  tx.commit();
 });
 
