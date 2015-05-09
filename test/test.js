@@ -515,7 +515,7 @@ tape('pipes', function(t){
 
   b.pipe(a).pipe(c);
 
-  for(i = 0; i< 3; i++){
+  for(i = 0; i< 2; i++){
     a.pipe(d);
     b.pipe(d);
     c.pipe(d);
