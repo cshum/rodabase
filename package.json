@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "description": "Node.js transactional document store, built on LevelDB.",
   "scripts": {
-    "test": "set -e; rm -rf test/db; node test/test.js;",
-    "browser": "beefy test/test.js:test.js"
+    "test": "set -e; rm -rf test/db; node test/test.js; browserify test/test.js | testling"
   },
   "repository": {
     "type": "git",
@@ -38,8 +37,7 @@
     "leveldown": "^0.10.0",
     "tape": "^3.0.2",
     "underscore": "^1.7.0",
-    "browserify": "^10.1.3",
-    "beefy": "^2.1.5"
+    "browserify": "^10.1.3"
   },
   "testling": {
     "files": "test/test.js",
