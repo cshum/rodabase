@@ -513,16 +513,14 @@ tape('pipes', function(t){
   for(i = 0; i < n/2; i++)
     b.put({b:i});
 
-  b.pipe(a);
-  a.pipe(c);
+  b.pipe(a).pipe(c);
 
-  a.pipe(d);
-  b.pipe(d);
-  c.pipe(d);
-  d.pipe(d);
-  b.pipe(d);
-  a.pipe(d);
-  c.pipe(d);
+  for(i = 0; i< 3; i++){
+    a.pipe(d);
+    b.pipe(d);
+    c.pipe(d);
+    d.pipe(d);
+  }
 
 });
 
