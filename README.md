@@ -4,8 +4,8 @@ Transactional document store for Node.js and browsers. Built on [LevelDB](https:
 * [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
 * Schemaless by default, constraint when needed.
 * Transactions guarantee linearizable local operations.
-* [Casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf) preserving replication mechanism.
-* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) in Node.js. IndexedDB/WebSQL in browser.
+* Multi-master replication mechanism with [casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf).
+* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB/WebSQL on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
