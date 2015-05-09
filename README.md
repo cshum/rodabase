@@ -1,11 +1,11 @@
 #Rodabase
 
-JavaScript transactional document store. Built on [LevelDB](https://github.com/rvagg/node-levelup).
+Transactional document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
 * [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
 * Schemaless by default, constraint when needed.
 * Transactions guarantee linearizable local operations.
 * [Casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf) preserving replication mechanism.
-* Flexible [storage backends](https://github.com/level/levelup/wiki/Modules#storage-back-ends). Works on Node.js or browser.
+* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) in Node.js. IndexedDB/WebSQL in browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
