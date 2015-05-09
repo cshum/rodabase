@@ -1,7 +1,7 @@
 {
   "name": "rodabase",
-  "version": "0.1.0",
-  "description": "Node.js transactional document store, built on LevelDB.",
+  "version": "0.2.0",
+  "description": "Transactional document store for Node.js and browsers. Built on LevelDB.",
   "scripts": {
     "test": "set -e; rm -rf test/db; node test/test.js;",
     "browser": "beefy test/test.js:test.js"
