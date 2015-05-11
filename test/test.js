@@ -99,7 +99,7 @@ tape('Transaction: lock increment', function(t){
       val = val || { k: 0 };
       val.k++;
 
-      api.put('k',val, tx);
+      api.put('k',val,tx);
     });
     tx.commit();
   }
@@ -143,7 +143,6 @@ tape('Transaction: isolation', function(t){
 
   c.put('bob', { n: 167 }, tx);
 
-
   tx.commit(function(){
     c.get('bob', tx2, function(err, data){
       data.n++;
@@ -161,60 +160,39 @@ tape('Transaction: isolation', function(t){
   });
 });
 
-tape('changeStream', function(t){
-  t.plan(3);
-  var api = roda('4');
-  var tx = roda.transaction();
-  var i;
+tape('CRUD', function(t){
+  var api = roda('crud');
+  t.plan(8);
 
-  for(i = 0; i < n; i++)
-    api.put(util.encodeNumber(i), { i: i }, tx);
-  for(i = 0; i < n; i++)
-    api.put(util.encodeNumber(i), { i: i }, tx); //redundant put
-
-  for(i = 0; i < n; i+=3)
-    api.del(util.encodeNumber(i), tx);
-  for(i = 0; i < n; i+=3)
-    api.del(util.encodeNumber(i), tx); //non-exist del
-
-  tx.commit(function(err){
-    t.notOk(err, 'commit success');
-
-    api.readStream().toArray(function(list){
-      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
-    });
-    api.changeStream({clocks:[]}).toArray(function(changes){
-      t.equal(changes.length, n, 'changes n ength');
-    });
+  api.update('foo', {'foo':'bar'}, function(err){
+    t.ok(err.keyNotFound, 'error update key not found');
   });
-});
-tape('Live changeStream', function(t){
-  t.plan(2);
-  var api = roda('4');
-
-  var liveChanges = [];
-  var live = [];
-  var m = 17;
-
-  api.liveStream()
-    .each(function(data){
-      live.push(data);
-      if(data.m === m - 1)
-        t.equal(live.length, m, 'live m ength');
-    });
-
-  api.changeStream({clocks: [], live: true})
-    .each(function(data){
-      liveChanges.push(data);
-      if(data.m === m - 1)
-        t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
-    });
+  api.delete('foo', function(err){
+    t.notOk(err, 'no err for non exist delete');
+  });
 
   var tx = roda.transaction();
-  for(i = 0; i < m; i++)
-    api.put({ m:i }, tx);
-  tx.commit();
+  api.create('bla', {'foo':'bar'}, tx, function(err, val){
+    t.equal(val.foo, 'bar', 'foo: bar');
+    val.foo = 'boo';
+    api.create('bla', {}, tx, function(err, val){
+      t.ok(err.keyExists, 'error create key exists');
+    });
+    api.update('bla', val, tx, function(err, val){
+      t.equal(val.foo, 'boo', 'foo: boo');
+    });
+    api.delete('bla', tx);
+  });
+  tx.commit(function(err){
+    api.get('bla', function(err, val){
+      t.notOk(err, 'no err for non exists get');
+      t.notOk(val, 'no val after delete');
+    });
+    t.notOk(err, 'no err for create update');
+  });
+
 });
+
 
 tape('Transaction Hook: Validate', function(t){
   t.plan(10);
@@ -232,7 +210,7 @@ tape('Transaction Hook: Validate', function(t){
   var i;
 
   for(i = 0; i < 10; i++){
-    roda('7').put({ i: i }, function(i, err, val){
+    roda('7').create({ i: i }, function(i, err, val){
       if(i % 3 === 0 || i % 2 === 0){
         t.notOk(val, i + ' err');
       }else{
@@ -245,7 +223,7 @@ tape('Transaction Hook: Validate', function(t){
 tape('Transaction hook: diff', function(t){
   t.plan(5);
   roda('5').use('diff', function(ctx, next){
-    roda('5.1').put(ctx.result._id, {
+    roda('5.1').create(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
     next();
@@ -254,7 +232,7 @@ tape('Transaction hook: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('5').put(util.encodeNumber(i), { i: i }, tx);
+    roda('5').create(util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
     roda('5').put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
@@ -281,8 +259,8 @@ tape('Transaction hook: diff', function(t){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
-
 });
+
 tape('Transaction hook: diff 2', function(t){
   t.plan(7);
   roda('6').use('diff', function(ctx, next){
@@ -343,6 +321,63 @@ tape('Transaction hook: diff 2', function(t){
   });
 
 });
+
+tape('changeStream', function(t){
+  t.plan(3);
+  var api = roda('4');
+  var tx = roda.transaction();
+  var i;
+
+  for(i = 0; i < n; i++)
+    api.put(util.encodeNumber(i), { i: i }, tx);
+  for(i = 0; i < n; i++)
+    api.put(util.encodeNumber(i), { i: i }, tx); //redundant put
+
+  for(i = 0; i < n; i+=3)
+    api.del(util.encodeNumber(i), tx);
+  for(i = 0; i < n; i+=3)
+    api.del(util.encodeNumber(i), tx); //non-exist del
+
+  tx.commit(function(err){
+    t.notOk(err, 'commit success');
+
+    api.readStream().toArray(function(list){
+      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
+    });
+    api.changeStream({clocks:[]}).toArray(function(changes){
+      t.equal(changes.length, n, 'changes n ength');
+    });
+  });
+});
+
+tape('Live changeStream', function(t){
+  t.plan(2);
+  var api = roda('4');
+
+  var liveChanges = [];
+  var live = [];
+  var m = 17;
+
+  api.liveStream()
+    .each(function(data){
+      live.push(data);
+      if(data.m === m - 1)
+        t.equal(live.length, m, 'live m ength');
+    });
+
+  api.changeStream({clocks: [], live: true})
+    .each(function(data){
+      liveChanges.push(data);
+      if(data.m === m - 1)
+        t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
+    });
+
+  var tx = roda.transaction();
+  for(i = 0; i < m; i++)
+    api.put({ m:i }, tx);
+  tx.commit();
+});
+
 
 tape('Index and Range', function(t){
   t.plan(21 + n);
