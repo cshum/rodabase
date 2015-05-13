@@ -163,7 +163,7 @@ tape('Transaction: isolation', function(t){
 
 tape('CRUD', function(t){
   var api = roda('crud');
-  t.plan(8);
+  t.plan(7);
 
   api.update('foo', {'foo':'bar'}, function(err){
     t.ok(err.notFound, 'error update key not found');
@@ -173,12 +173,9 @@ tape('CRUD', function(t){
   });
 
   var tx = roda.transaction();
-  api.create('bla', {'foo':'bar'}, tx, function(err, val){
+  api.put('bla', {'foo':'bar'}, tx, function(err, val){
     t.equal(val.foo, 'bar', 'foo: bar');
     val.foo = 'boo';
-    api.create('bla', {}, tx, function(err, val){
-      t.ok(err.exists, 'error create key exists');
-    });
     api.update('bla', val, tx, function(err, val){
       t.equal(val.foo, 'boo', 'foo: boo');
     });
@@ -225,7 +222,7 @@ tape('Transaction Hook: Validate', function(t){
 tape('Transaction hook: diff', function(t){
   t.plan(5);
   roda('5').use('diff', function(ctx, next){
-    roda('5.1').create(ctx.result._id, {
+    roda('5.1').put(ctx.result._id, {
       i: ctx.result.i * 10
     }, ctx.transaction);
     next();
@@ -234,7 +231,7 @@ tape('Transaction hook: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('5').create(util.encodeNumber(i), { i: i }, tx);
+    roda('5').put(util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
     roda('5').put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
