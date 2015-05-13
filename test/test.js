@@ -165,7 +165,7 @@ tape('CRUD', function(t){
   var api = roda('crud');
   t.plan(8);
 
-  api.create({'foo':'bar'}, function(err, val){
+  api.post({'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'create');
   });
   api.update('foo', {'foo':'bar'}, function(err){
@@ -212,7 +212,7 @@ tape('Transaction Hook: Validate', function(t){
   var i;
 
   for(i = 0; i < 10; i++){
-    roda('7').create({ i: i }, function(i, err, val){
+    roda('7').post({ i: i }, function(i, err, val){
       if(i % 3 === 0 || i % 2 === 0){
         t.notOk(val, i + ' err');
       }else{
