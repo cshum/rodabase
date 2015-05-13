@@ -2,9 +2,9 @@
 
 Transactional document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
 * [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
-* Transactions guarantee linearizable local operations.
-* Multi-master replication mechanism with [casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf).
-* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB/WebSQL on browser.
+* Transactions enables linearizable consistency for local operations.
+* Multi-master replication mechanism preserving [casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf).
+* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB or WebSQL on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
@@ -56,7 +56,9 @@ var roda = rodabase('./db');
 
 All operations are asynchronous although they don't necessarily require a callback.
 
-####.put([id], doc, [tx], [cb])
+####.create([id], doc, [tx], [cb])
+####.update(id, doc, [tx], [cb])
+####.put(id, doc, [tx], [cb])
 Inserting, updating data into Rodabase. 
 
 * `id`:  Primary key under namespace. Must be a string. Will auto generate a unique ID if not specifying one.
@@ -103,7 +105,7 @@ Removes data from Rodabase.
 * `id`: Primary key under the namespace. Must be a string.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
-###Index
+###Index Mapper
 ####.index(name, mapper)
 #####emit(key, [doc], [unique])
 
@@ -132,12 +134,12 @@ users.readStream({ index: 'age', gt: 15 }); //users over age 15
 
 ###Transaction
 
-Rodabase manages transaction states in asynchronous, isolated manner. Rodabase is ACID compliant:
+What Rodabase mean in context of ACID:
 
 * **Atomicity**: Transactions complete either entirely or no effect at all. Inherent feature of [batched operations](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) in LevelDB.
 * **Consistency**: Rodabase allows fine-grain control over data integrity, validations, logging, consistently throughout the application.
-* **Isolation**: States of transactions are isolated until successful commits.
-* **Durability**: Committed transactions are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) as a LevelDB option.
+* **Isolation**: Changes of transactions are isolated until successful commits.
+* **Durability**: Committed changes are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) as a LevelDB option.
 
 ####roda.transaction()
 
@@ -248,28 +250,23 @@ tx.commit(function(){
 });
 ```
 
-###Changes
-
-Causal consistency ensures operations appear in the order the user intuitively expects. Three rules define potential causality:
-
-1. **Execution Thread**: If `a` and `b` are two operations within a transaction, `a ~ b` if operation `a` happens before operation `b`.
-2. **Gets From**: If `a` is a put operation and `b` is a get operation that returns the value written by a, then `a ~ b`.
-3. **Transitivity**: For operations `a`, `b`, and `c`, if `a ~ b` and `b ~ c`, then `a ~ c`. Thus, the causal relationship between operations is the transitive closure of the first two rules.
-
+###Changes and Replication
 
 ####.clockStream()
 
 Readable stream for [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps) of the Roda.
 Everytime a write operation is committed its logical clock is incremented.
-In order to
-`clockStream()` indicates 
-
 
 ####.liveStream()
 ####.changeStream([options])
+* `_last` last timestamp under revision prefix. This keeps execution order for `mergeStream()`.
+* `_deleted` denotes delete of the document. 
+* `_from` **Gets From**: If `a` is a put operation and `b` is a get operation that returns the value written by a, then `a ~ b`.
+
 
 ###Replication
 ####.mergeStream()
+Changes will be queued up until `_last` matches destination timestamp.
 ```js
 var a = roda('a');
 var b = roda('b');

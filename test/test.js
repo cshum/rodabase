@@ -120,7 +120,7 @@ tape('Transaction: sequential operations', function(t){
   var tx = roda.transaction();
 
   for(var i = 0; i < n; i++)
-    api.put({ i: i }, tx);
+    api.insert({ i: i }, tx);
     
   api.readStream().toArray(function(list){
     t.equal(list.length, 0, 'list empty before commit');
@@ -165,7 +165,7 @@ tape('CRUD', function(t){
   t.plan(8);
 
   api.update('foo', {'foo':'bar'}, function(err){
-    t.ok(err.keyNotFound, 'error update key not found');
+    t.ok(err.notFound, 'error update key not found');
   });
   api.delete('foo', function(err){
     t.notOk(err, 'no err for non exist delete');
@@ -176,7 +176,7 @@ tape('CRUD', function(t){
     t.equal(val.foo, 'bar', 'foo: bar');
     val.foo = 'boo';
     api.create('bla', {}, tx, function(err, val){
-      t.ok(err.keyExists, 'error create key exists');
+      t.ok(err.exists, 'error create key exists');
     });
     api.update('bla', val, tx, function(err, val){
       t.equal(val.foo, 'boo', 'foo: boo');
@@ -374,7 +374,7 @@ tape('Live changeStream', function(t){
 
   var tx = roda.transaction();
   for(i = 0; i < m; i++)
-    api.put({ m:i }, tx);
+    api.insert({ m:i }, tx);
   tx.commit();
 });
 
@@ -401,21 +401,21 @@ tape('Index and Range', function(t){
     if(doc.gender)
       emit([doc.gender, doc.age]);
   })
-  .put({ email: 'abc' }, function(err, val){
+  .insert({ email: 'abc' }, function(err, val){
     t.ok(err, 'Invalid Email');
-    this.put({ email: 'adrian@cshum.com', age: 25, gender:'M' }, function(err, val){
+    this.insert({ email: 'adrian@cshum.com', age: 25, gender:'M' }, function(err, val){
       t.equal(val.email, 'adrian@cshum.com', 'Email Saved');
 
       for(var i = 0; i < n; i++){
-        this.put({ email: 'adrian@cshum.com' }, function(err, val){
-          t.ok(err.keyExists, 'Repeated');
+        this.insert({ email: 'adrian@cshum.com' }, function(err, val){
+          t.ok(err.exists, 'Repeated');
         });
       }
 
-      this.put({ email: 'hello@world.com', age: 15, gender:'m' }, function(err, val){
+      this.insert({ email: 'hello@world.com', age: 15, gender:'m' }, function(err, val){
         t.equal(val.email, 'hello@world.com', 'Email Saved');
 
-        this.put({ email: 'foo@bar.com', age: 15, gender:'F' }, function(err, val){
+        this.insert({ email: 'foo@bar.com', age: 15, gender:'F' }, function(err, val){
           t.equal(val.email, 'foo@bar.com', 'Email Saved');
 
           this.readStream({index:'email'})
@@ -544,9 +544,9 @@ tape('pipes', function(t){
   });
 
   for(i = 0; i < n/2; i++)
-    a.put({a:i});
+    a.insert({a:i});
   for(i = 0; i < n/2; i++)
-    b.put({b:i});
+    b.insert({b:i});
 
   b.pipe(a).pipe(c);
 
