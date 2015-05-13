@@ -163,8 +163,11 @@ tape('Transaction: isolation', function(t){
 
 tape('CRUD', function(t){
   var api = roda('crud');
-  t.plan(7);
+  t.plan(8);
 
+  api.create({'foo':'bar'}, function(err, val){
+    t.equal(val.foo, 'bar', 'create');
+  });
   api.update('foo', {'foo':'bar'}, function(err){
     t.ok(err.notFound, 'error update key not found');
   });
