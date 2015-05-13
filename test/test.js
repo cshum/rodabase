@@ -94,7 +94,7 @@ tape('Transaction: lock increment', function(t){
   function run(i){
     var tx = roda.transaction();
     api.get('k', tx, function(err, val){
-      ok &= !err;
+      ok &= !(err && !err.notFound);
 
       val = val || { k: 0 };
       val.k++;
@@ -108,7 +108,7 @@ tape('Transaction: lock increment', function(t){
 
   var tx = roda.transaction();
   api.get('k', tx, function(err, val){
-    t.ok(ok, 'no error');
+    t.ok(ok, 'ok');
     t.equal(val.k, n, 'Incremential');
   });
   tx.commit();
@@ -168,7 +168,7 @@ tape('CRUD', function(t){
     t.ok(err.notFound, 'error update key not found');
   });
   api.delete('foo', function(err){
-    t.notOk(err, 'no err for non exist delete');
+    t.ok(err.notFound, 'notFound err for non exist delete');
   });
 
   var tx = roda.transaction();
@@ -182,13 +182,14 @@ tape('CRUD', function(t){
       t.equal(val.foo, 'boo', 'foo: boo');
     });
     api.delete('bla', tx);
+    api.delete('bla', tx); //redundant del
   });
   tx.commit(function(err){
+    t.notOk(err, 'no err for commit');
     api.get('bla', function(err, val){
-      t.notOk(err, 'no err for non exists get');
+      t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
     });
-    t.notOk(err, 'no err for create update');
   });
 
 });
