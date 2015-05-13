@@ -10,12 +10,13 @@ if(process.browser){
   idb.deleteDatabase('IDBWrapper-./test/db');
 }
 
+var n = 50;
+// var n = 100;
 var roda = rodabase('./test/db', {
-  ttl: 60 * 1000
+  ttl: n * 1000
   // db: require('jsondown')
 });
 var util = roda.util;
-var n = 50;
 
 //simulate inconsistent delay
 roda.fn
@@ -526,27 +527,24 @@ tape('pipes', function(t){
   };
   a.liveStream().each(function(doc){
     count.a++;
-    // console.log(count);
-    if(count.a === n)
+    if(count.a === n*2)
       t.ok(true, 'b pipe a');
   });
   c.liveStream().each(function(doc){
     count.c++;
-    // console.log(count);
-    if(count.c === n){
+    if(count.c === n*2){
       t.ok(true, 'a pipe c');
     }
   });
   d.liveStream().each(function(doc){
     count.d++;
-    // console.log(count);
-    if(count.d === n)
+    if(count.d === n*2)
       t.ok(true, 'sink');
   });
 
-  for(i = 0; i < n/2; i++)
+  for(i = 0; i < n; i++)
     a.insert({a:i});
-  for(i = 0; i < n/2; i++)
+  for(i = 0; i < n; i++)
     b.insert({b:i});
 
   b.pipe(a).pipe(c);
