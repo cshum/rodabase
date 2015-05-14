@@ -1,6 +1,6 @@
 var rodabase = require('../');
 
-var tape = require('tape');
+var test = require('tape');
 var _ = require('underscore');
 var H = require('highland');
 
@@ -27,7 +27,7 @@ roda.fn
     setTimeout(next, Math.random() * 5);
   });
 
-tape('encode decode', function(t){
+test('encode decode', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
@@ -45,7 +45,7 @@ tape('encode decode', function(t){
   t.end();
 });
 
-tape('encode decode number', function(t){
+test('encode decode number', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
@@ -63,7 +63,7 @@ tape('encode decode number', function(t){
   t.end();
 });
 
-tape('clocks', function(t){
+test('clocks', function(t){
   var arr = ['01234567abc','12345678def','23456789ghi'];
   var obj = {
     '01234567':'abc',
@@ -75,7 +75,7 @@ tape('clocks', function(t){
   t.end();
 });
 
-tape('timestamp', function(t){
+test('timestamp', function(t){
   var prev = 0;
   var ok = true;
   for(var i = 0, l = 1000; i < l; i++){
@@ -87,7 +87,7 @@ tape('timestamp', function(t){
   t.end();
 });
 
-tape('Transaction: lock increment', function(t){
+test('Transaction: lock increment', function(t){
   var api = roda('1');
   var ok = true;
 
@@ -115,7 +115,7 @@ tape('Transaction: lock increment', function(t){
   tx.commit();
 });
 
-tape('Transaction: sequential operations', function(t){
+test('Transaction: sequential operations', function(t){
   t.plan(4);
   var api = roda('3');
   var tx = roda.transaction();
@@ -136,7 +136,7 @@ tape('Transaction: sequential operations', function(t){
   });
 });
 
-tape('Transaction: isolation', function(t){
+test('Transaction: isolation', function(t){
   t.plan(2);
   var c = roda('count');
   var tx = roda.transaction();
@@ -161,7 +161,7 @@ tape('Transaction: isolation', function(t){
   });
 });
 
-tape('CRUD', function(t){
+test('CRUD', function(t){
   var api = roda('crud');
   t.plan(8);
 
@@ -196,7 +196,7 @@ tape('CRUD', function(t){
 });
 
 
-tape('Transaction Hook: Validate', function(t){
+test('Transaction middleware: Validate', function(t){
   t.plan(10);
   roda('7')
     .use('validate', function(ctx, next){
@@ -222,7 +222,7 @@ tape('Transaction Hook: Validate', function(t){
   }
 });
 
-tape('Transaction hook: diff', function(t){
+test('Transaction middleware: diff', function(t){
   t.plan(5);
   roda('5').use('diff', function(ctx, next){
     roda('5.1').put(ctx.result._id, {
@@ -263,7 +263,7 @@ tape('Transaction hook: diff', function(t){
   });
 });
 
-tape('Transaction hook: diff 2', function(t){
+test('Transaction middleware: diff 2', function(t){
   t.plan(7);
   roda('6').use('diff', function(ctx, next){
     roda('6.1').put(ctx.result._id, {
@@ -324,7 +324,7 @@ tape('Transaction hook: diff 2', function(t){
 
 });
 
-tape('changeStream', function(t){
+test('changeStream', function(t){
   t.plan(3);
   var api = roda('4');
   var tx = roda.transaction();
@@ -352,7 +352,7 @@ tape('changeStream', function(t){
   });
 });
 
-tape('Live changeStream', function(t){
+test('Live changeStream', function(t){
   t.plan(2);
   var api = roda('4');
 
@@ -381,7 +381,7 @@ tape('Live changeStream', function(t){
 });
 
 
-tape('Index and Range', function(t){
+test('Index and Range', function(t){
   t.plan(21 + n);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
@@ -513,7 +513,7 @@ tape('Index and Range', function(t){
   });
 });
 
-tape('pipes', function(t){
+test('pipes', function(t){
   t.plan(3);
 
   var a = roda('a1');
