@@ -251,13 +251,13 @@ test('Transaction middleware: diff', function(t){
     roda('5').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('5').changeStream({clocks:[]}).toArray(function(changes){
+    roda('5').changesStream({clocks:[]}).toArray(function(changes){
       t.equal(changes.length, n, 'changes n length');
     });
     roda('5.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('5.1').changeStream({clocks:[]}).toArray(function(list){
+    roda('5.1').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
@@ -305,26 +305,26 @@ test('Transaction middleware: diff 2', function(t){
     roda('6').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('6').changeStream({clocks:[]}).toArray(function(changes){
+    roda('6').changesStream({clocks:[]}).toArray(function(changes){
       t.equal(changes.length, n, 'changes n length');
     });
     roda('6.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.1').changeStream({clocks:[]}).toArray(function(list){
+    roda('6.1').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'hook changes n length');
     });
     roda('6.2').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.2').changeStream({clocks:[]}).toArray(function(list){
+    roda('6.2').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'hook changes n length');
     });
   });
 
 });
 
-test('changeStream', function(t){
+test('changesStream', function(t){
   t.plan(3);
   var api = roda('4');
   var tx = roda.transaction();
@@ -346,13 +346,13 @@ test('changeStream', function(t){
     api.readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    api.changeStream({clocks:[]}).toArray(function(changes){
+    api.changesStream({clocks:[]}).toArray(function(changes){
       t.equal(changes.length, n, 'changes n ength');
     });
   });
 });
 
-test('Live changeStream', function(t){
+test('Live changesStream', function(t){
   t.plan(2);
   var api = roda('4');
 
@@ -367,7 +367,7 @@ test('Live changeStream', function(t){
         t.equal(live.length, m, 'live m ength');
     });
 
-  api.changeStream({clocks: [], live: true})
+  api.changesStream({clocks: [], live: true})
     .each(function(data){
       liveChanges.push(data);
       if(data.m === m - 1)
