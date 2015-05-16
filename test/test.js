@@ -534,7 +534,9 @@ test('pipes', function(t){
       });
     }
   });
-  a.changesStream({ clocks:[], local: true, live: true }).each(function(doc){
+  roda.emptyStream().pipe(
+    a.changesStream({ local: true, live: true })
+  ).each(function(doc){
     count.aL++;
     if(count.aL === n){
       t.ok(true, 'a local');
