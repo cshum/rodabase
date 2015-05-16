@@ -514,7 +514,7 @@ test('Index and Range', function(t){
 });
 
 test('pipes', function(t){
-  t.plan(5);
+  t.plan(6);
 
   var a = roda('a1');
   var b = roda('b1');
@@ -523,7 +523,7 @@ test('pipes', function(t){
   var i;
 
   var count = {
-    a: 0, c: 0, d: 0
+    a: 0, c: 0, d: 0, aL: 0
   };
   a.liveStream().each(function(doc){
     count.a++;
@@ -532,6 +532,12 @@ test('pipes', function(t){
       a.changesStream({ clocks:[], local: true }).toArray(function(arr){
         t.equal(arr.length, n, 'a local changes');
       });
+    }
+  });
+  a.changesStream({ clocks:[], local: true, live: true }).each(function(doc){
+    count.aL++;
+    if(count.aL === n){
+      t.ok(true, 'a local');
     }
   });
   c.liveStream().each(function(doc){
