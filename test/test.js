@@ -353,12 +353,16 @@ test('changesStream', function(t){
 });
 
 test('Live changesStream', function(t){
-  t.plan(2);
+  t.plan(3);
   var api = roda('4');
 
   var liveChanges = [];
   var live = [];
   var m = 17;
+
+  var tx = roda.transaction();
+  for(i = 0; i < m; i++)
+    api.insert({ m:i }, tx);
 
   api.liveStream()
     .each(function(data){
@@ -367,17 +371,17 @@ test('Live changesStream', function(t){
         t.equal(live.length, m, 'live m ength');
     });
 
-  api.changesStream({clocks: [], live: true})
+  api.changesStream({clocks: [], live: true, sync: true})
     .each(function(data){
       liveChanges.push(data);
+      if(data._sync){
+        t.equal(liveChanges.length, n + 1, 'sync emitted at n + 1');
+        tx.commit();
+      }
       if(data.m === m - 1)
-        t.equal(liveChanges.length, n + m, 'liveChanges n + m ength');
+        t.equal(liveChanges.length, n + m + 1, 'liveChanges n + m + 1 ength');
     });
 
-  var tx = roda.transaction();
-  for(i = 0; i < m; i++)
-    api.insert({ m:i }, tx);
-  tx.commit();
 });
 
 
