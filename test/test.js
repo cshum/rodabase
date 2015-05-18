@@ -121,7 +121,7 @@ test('Transaction: sequential operations', function(t){
   var tx = roda.transaction();
 
   for(var i = 0; i < n; i++)
-    api.insert({ i: i }, tx);
+    api.post({ i: i }, tx);
     
   api.readStream().toArray(function(list){
     t.equal(list.length, 0, 'list empty before commit');
@@ -171,7 +171,7 @@ test('CRUD', function(t){
   api.update('foo', {'foo':'bar'}, function(err){
     t.ok(err.notFound, 'error update key not found');
   });
-  api.delete('foo', function(err){
+  api.del('foo', function(err){
     t.ok(err.notFound, 'notFound err for non exist delete');
   });
 
@@ -182,8 +182,8 @@ test('CRUD', function(t){
     api.update('bla', val, tx, function(err, val){
       t.equal(val.foo, 'boo', 'foo: boo');
     });
-    api.delete('bla', tx);
-    api.delete('bla', tx); //redundant del
+    api.del('bla', tx);
+    api.del('bla', tx); //redundant del
   });
   tx.commit(function(err){
     t.notOk(err, 'no err for commit');
@@ -362,7 +362,7 @@ test('Live changesStream', function(t){
 
   var tx = roda.transaction();
   for(i = 0; i < m; i++)
-    api.insert({ m:i }, tx);
+    api.post({ m:i }, tx);
 
   api.liveStream()
     .each(function(data){
@@ -385,7 +385,7 @@ test('Live changesStream', function(t){
 });
 
 
-test('Index and Range', function(t){
+test('Mapper and Range', function(t){
   t.plan(21 + n);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
@@ -397,34 +397,34 @@ test('Index and Range', function(t){
       ctx.result.gender = ctx.result.gender.toUpperCase();
     next();
   })
-  .index('email', function(doc, emit){
+  .mapper('email', function(doc, emit){
     emit(doc.email, true);
   })
-  .index('age', function(doc, emit){
+  .mapper('age', function(doc, emit){
     emit(doc.age);
   })
-  .index('gender_age', function(doc, emit){
+  .mapper('gender_age', function(doc, emit){
     if(doc.gender)
       emit([doc.gender, doc.age]);
   })
-  .insert({ email: 'abc' }, function(err, val){
+  .post({ email: 'abc' }, function(err, val){
     t.ok(err, 'Invalid Email');
-    this.insert({ email: 'adrian@cshum.com', age: 25, gender:'M' }, function(err, val){
+    this.post({ email: 'adrian@cshum.com', age: 25, gender:'M' }, function(err, val){
       t.equal(val.email, 'adrian@cshum.com', 'Email Saved');
 
       for(var i = 0; i < n; i++){
-        this.insert({ email: 'adrian@cshum.com' }, function(err, val){
+        this.post({ email: 'adrian@cshum.com' }, function(err, val){
           t.ok(err.exists, 'Repeated');
         });
       }
 
-      this.insert({ email: 'hello@world.com', age: 15, gender:'m' }, function(err, val){
+      this.post({ email: 'hello@world.com', age: 15, gender:'m' }, function(err, val){
         t.equal(val.email, 'hello@world.com', 'Email Saved');
 
-        this.insert({ email: 'foo@bar.com', age: 15, gender:'F' }, function(err, val){
+        this.post({ email: 'foo@bar.com', age: 15, gender:'F' }, function(err, val){
           t.equal(val.email, 'foo@bar.com', 'Email Saved');
 
-          this.readStream({index:'email'})
+          this.readStream({ map:'email' })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, [
                 'adrian@cshum.com',
@@ -440,35 +440,35 @@ test('Index and Range', function(t){
                 'foo@bar.com',
               ], 'Email read by order');
             });
-          this.readStream({index: 'email', eq:'foo@bar.com' })
+          this.readStream({map: 'email', eq:'foo@bar.com' })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['foo@bar.com'], 'index eq');
             });
-          this.readStream({index: 'email', eq:'foo@bar.co' })
+          this.readStream({map: 'email', eq:'foo@bar.co' })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, [], 'index prefix not eq ');
             });
-          this.readStream({index: 'email', prefix:'foo@bar.co' })
+          this.readStream({map: 'email', prefix:'foo@bar.co' })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['foo@bar.com'], 'index string prefix');
             });
-          this.readStream({index: 'age'})
+          this.readStream({map: 'age'})
             .pluck('email').toArray(function(list){
               t.deepEqual(list, all, 'Email read by age');
             });
-          this.readStream({index: 'age', gt: 15 })
+          this.readStream({map: 'age', gt: 15 })
             .pluck('email').toArray(function(list){
               t.deepEqual(
                 list, ['adrian@cshum.com'], 'Email read by age >15'
               );
             });
-          this.readStream({index: 'age', lt: 25 })
+          this.readStream({map: 'age', lt: 25 })
             .pluck('email').toArray(function(list){
               t.deepEqual(
                 list, ['hello@world.com','foo@bar.com'], 'Email read by age <25'
               );
             });
-          this.readStream({index: 'age', eq: 15 })
+          this.readStream({map: 'age', eq: 15 })
             .pluck('email').toArray(function(list){
               t.deepEqual(
                 list, ['hello@world.com','foo@bar.com'], 'Email read by age === 15'
@@ -479,35 +479,35 @@ test('Index and Range', function(t){
             'foo@bar.com',
             'adrian@cshum.com'
           ];
-          this.readStream({index: 'age', gte: 15 })
+          this.readStream({map: 'age', gte: 15 })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, all, 'Email read by age >=15');
             });
-          this.readStream({index: 'age', lte: 25 })
+          this.readStream({map: 'age', lte: 25 })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, all, 'Email read by age <=25');
             });
-          this.readStream({index: 'gender_age', prefix: ['F'] })
+          this.readStream({map: 'gender_age', prefix: ['F'] })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['foo@bar.com'], 'Female');
             });
-          this.readStream({index: 'gender_age', prefix: ['M'] })
+          this.readStream({map: 'gender_age', prefix: ['M'] })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['hello@world.com','adrian@cshum.com'], 'Male');
             });
-          this.readStream({index: 'gender_age', eq: ['M'] })
+          this.readStream({map: 'gender_age', eq: ['M'] })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, [], 'fales eq');
             });
-          this.readStream({index: 'gender_age', prefix: ['M'], gt: 15 })
+          this.readStream({map: 'gender_age', prefix: ['M'], gt: 15 })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['adrian@cshum.com'], 'Male over age 15');
             });
-          this.readStream({index: 'gender_age', eq: ['M', 25] })
+          this.readStream({map: 'gender_age', eq: ['M', 25] })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['adrian@cshum.com'], 'Male age === 25');
             });
-          this.readStream({index: 'gender_age', prefix: ['M'], lte: 15 })
+          this.readStream({map: 'gender_age', prefix: ['M'], lte: 15 })
             .pluck('email').toArray(function(list){
               t.deepEqual(list, ['hello@world.com'], 'Male age 15');
             });
@@ -563,9 +563,9 @@ test('pipes', function(t){
   });
 
   for(i = 0; i < n; i++)
-    a.insert({a:i});
+    a.post({a:i});
   for(i = 0; i < n; i++)
-    b.insert({b:i});
+    b.post({b:i});
 
   b.pipe(a).pipe(c);
 
