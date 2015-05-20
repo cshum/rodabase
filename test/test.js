@@ -353,35 +353,29 @@ test('changesStream', function(t){
 });
 
 test('Live changesStream', function(t){
-  t.plan(3);
+  t.plan(2);
   var api = roda('4');
 
   var liveChanges = [];
   var live = [];
   var m = 17;
 
+  api.liveStream().each(function(data){
+    live.push(data);
+    if(data.m === m - 1)
+      t.equal(live.length, m, 'live m ength');
+  });
+
+  api.changesStream({clocks: [], live: true}).each(function(data){
+    liveChanges.push(data);
+    if(data.m === m - 1)
+      t.equal(liveChanges.length, n + m, 'liveChanges n + m length');
+  });
+
   var tx = roda.transaction();
   for(i = 0; i < m; i++)
     api.post({ m:i }, tx);
-
-  api.liveStream()
-    .each(function(data){
-      live.push(data);
-      if(data.m === m - 1)
-        t.equal(live.length, m, 'live m ength');
-    });
-
-  api.changesStream({clocks: [], live: true, sync: true})
-    .each(function(data){
-      liveChanges.push(data);
-      if(data._sync){
-        t.equal(liveChanges.length, n + 1, 'sync emitted at n + 1');
-        tx.commit();
-      }
-      if(data.m === m - 1)
-        t.equal(liveChanges.length, n + m + 1, 'liveChanges n + m + 1 ength');
-    });
-
+  tx.commit();
 });
 
 
