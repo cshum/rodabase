@@ -558,12 +558,24 @@ test('pipes', function(t){
 
 });
 
-test('Merge replication', function(t){
+test('Merge Sync', function(t){
   t.plan(1);
 
+  var master = roda('master');
   var a = roda('a2');
   var b = roda('b2');
   var tx = roda.transaction();
+
+  function sync(api){
+    master.clockStream()
+      .pipe(api.changesStream())
+      .pipe(master.replicateStream({
+        merge: true
+      }));
+    api.clockStream()
+      .pipe(master.changesStream())
+      .pipe(api.replicateStream());
+  }
 
   a.put('a1',{a:1}, tx);
   a.put('a2',{a:2}, tx);
@@ -572,18 +584,20 @@ test('Merge replication', function(t){
   b.put('b2',{b:2}, tx);
   b.put('b3',{b:3}, tx);
 
-  b.liveStream().each(function(data){
+  master.liveStream().each(function(data){
     console.log(data);
-    if(data._id === 'a3'){
+    if(data._id === 'a3')
       t.pass('merge replicate');
-    }
+  });
+  a.liveStream().each(function(data){
+    console.log('a',data);
+  });
+  b.liveStream().each(function(data){
+    console.log('b',data);
   });
 
   tx.commit(function(){
-    b.clockStream()
-      .pipe(a.changesStream())
-      .pipe(b.replicateStream({
-        merge: true
-      }));
+    sync(a);
+    sync(b);
   });
 });
