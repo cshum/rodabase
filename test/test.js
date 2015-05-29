@@ -558,3 +558,32 @@ test('pipes', function(t){
 
 });
 
+test('Merge replication', function(t){
+  t.plan(1);
+
+  var a = roda('a2');
+  var b = roda('b2');
+  var tx = roda.transaction();
+
+  a.put('a1',{a:1}, tx);
+  a.put('a2',{a:2}, tx);
+  a.put('a3',{a:3}, tx);
+  b.put('b1',{b:1}, tx);
+  b.put('b2',{b:2}, tx);
+  b.put('b3',{b:3}, tx);
+
+  b.liveStream().each(function(data){
+    console.log(data);
+    if(data._id === 'a3'){
+      t.pass('merge replicate');
+    }
+  });
+
+  tx.commit(function(){
+    b.clockStream()
+      .pipe(a.changesStream())
+      .pipe(b.replicateStream({
+        merge: true
+      }));
+  });
+});
