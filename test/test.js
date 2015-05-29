@@ -558,7 +558,7 @@ test('pipes', function(t){
 
 });
 
-test('Merge Sync', function(t){
+test('Master Client Sync', function(t){
   t.plan(1);
 
   var master = roda('master');
@@ -568,36 +568,50 @@ test('Merge Sync', function(t){
 
   function sync(api){
     master.clockStream()
-      .pipe(api.changesStream())
+      .pipe(api.changesStream({
+        live: true
+      }))
       .pipe(master.replicateStream({
         merge: true
       }));
     api.clockStream()
-      .pipe(master.changesStream())
+      .pipe(master.changesStream({
+        live: true
+      }))
       .pipe(api.replicateStream());
   }
 
-  a.put('a1',{a:1}, tx);
-  a.put('a2',{a:2}, tx);
-  a.put('a3',{a:3}, tx);
-  b.put('b1',{b:1}, tx);
-  b.put('b2',{b:2}, tx);
-  b.put('b3',{b:3}, tx);
+  a.post({a:1}, tx);
+  a.post({a:2}, tx);
+  a.post({a:3}, tx);
+  b.post({b:1}, tx);
+  b.post({b:2}, tx);
+  b.post({b:3}, tx);
+
+  var results = {
+    master: [],
+    a: [],
+    b: []
+  };
 
   master.liveStream().each(function(data){
-    console.log(data);
-    if(data._id === 'a3')
-      t.pass('merge replicate');
+    results.master.push(data);
+    if(results.master.length === 6)
+      console.log('master', results.master);
   });
   a.liveStream().each(function(data){
-    console.log('a',data);
+    results.a.push(data);
+    if(results.a.length === 6)
+      console.log('a', results.a);
   });
   b.liveStream().each(function(data){
-    console.log('b',data);
+    results.b.push(data);
+    if(results.b.length === 6)
+      console.log('b', results.b);
   });
 
-  tx.commit(function(){
-    sync(a);
-    sync(b);
-  });
+  tx.commit();
+
+  sync(a);
+  sync(b);
 });
