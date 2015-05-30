@@ -355,22 +355,21 @@ test('changesStream', function(t){
 test('Live changesStream', function(t){
   t.plan(2);
   var api = roda('4');
-
-  var liveChanges = [];
-  var live = [];
   var m = 17;
 
-  api.liveStream().each(function(data){
-    live.push(data);
-    if(data.m === m - 1)
-      t.equal(live.length, m, 'live m ength');
-  });
+  api.liveStream()
+    .drop(m - 1)
+    .pull(function(err, data){
+      if(data.m === m - 1)
+        t.equal(data.m, m - 1, 'liveStream tail');
+    });
 
-  api.changesStream({clocks: [], live: true}).each(function(data){
-    liveChanges.push(data);
-    if(data.m === m - 1)
-      t.equal(liveChanges.length, n + m, 'liveChanges n + m length');
-  });
+  api.changesStream({ clocks: [], live: true })
+    .drop(n + m - 1)
+    .pull(function(err, data){
+      if(data.m === m - 1)
+        t.equal(data.m, m - 1, 'liveChanges tail');
+    });
 
   var tx = roda.transaction();
   for(i = 0; i < m; i++)
@@ -520,26 +519,14 @@ test('pipes', function(t){
   var d = roda('d1');
   var i;
 
-  var count = {
-    a: 0, c: 0, d: 0, aL: 0
-  };
-  a.liveStream().each(function(doc){
-    count.a++;
-    if(count.a === n*2){
-      t.ok(true, 'b pipe a');
-    }
+  a.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    t.pass('b pipe a');
   });
-  c.liveStream().each(function(doc){
-    count.c++;
-    if(count.c === n*2){
-      t.ok(true, 'a pipe c');
-    }
+  c.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    t.pass('a pipe c');
   });
-  d.liveStream().each(function(doc){
-    count.d++;
-    if(count.d === n*2){
-      t.ok(true, 'sink');
-    }
+  d.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    t.pass('sink');
   });
 
   for(i = 0; i < n; i++)
@@ -549,7 +536,7 @@ test('pipes', function(t){
 
   b.pipe(a).pipe(c);
 
-  for(i = 0; i< 2; i++){
+  for(i = 0; i< 5; i++){
     a.pipe(d);
     b.pipe(d);
     c.pipe(d);
