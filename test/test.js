@@ -558,26 +558,20 @@ test('pipes', function(t){
 
 });
 
-test('Master Client Sync', function(t){
-  t.plan(1);
+test('Merge sync', function(t){
+  t.plan(3);
 
-  var master = roda('master');
+  var server = roda('server');
   var a = roda('a2');
   var b = roda('b2');
   var tx = roda.transaction();
 
   function sync(api){
-    master.clockStream()
-      .pipe(api.changesStream({
-        live: true
-      }))
-      .pipe(master.replicateStream({
-        merge: true
-      }));
+    server.clockStream()
+      .pipe(api.changesStream({ live: true }))
+      .pipe(server.replicateStream({ merge: true }));
     api.clockStream()
-      .pipe(master.changesStream({
-        live: true
-      }))
+      .pipe(server.changesStream({ live: true }))
       .pipe(api.replicateStream());
   }
 
@@ -588,30 +582,28 @@ test('Master Client Sync', function(t){
   b.post({b:2}, tx);
   b.post({b:3}, tx);
 
-  var results = {
-    master: [],
-    a: [],
-    b: []
-  };
+  var results = { server: [], a: [], b: [] };
 
-  master.liveStream().each(function(data){
-    results.master.push(data);
-    if(results.master.length === 6)
-      console.log('master', results.master);
+  tx.commit(function(){
+    server.liveStream().each(function(data){
+      results.server.push(data);
+      if(results.server.length === 6){
+        t.pass('server Ok');
+      }
+    });
+    a.liveStream().each(function(data){
+      results.a.push(data);
+      if(results.a.length === 6){
+        t.deepEqual(results.a, results.server, 'a equals server');
+      }
+    });
+    b.liveStream().each(function(data){
+      results.b.push(data);
+      if(results.b.length === 6){
+        t.deepEqual(results.b, results.server, 'b equals server');
+      }
+    });
+    sync(a);
+    sync(b);
   });
-  a.liveStream().each(function(data){
-    results.a.push(data);
-    if(results.a.length === 6)
-      console.log('a', results.a);
-  });
-  b.liveStream().each(function(data){
-    results.b.push(data);
-    if(results.b.length === 6)
-      console.log('b', results.b);
-  });
-
-  tx.commit();
-
-  sync(a);
-  sync(b);
 });
