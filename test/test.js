@@ -569,19 +569,24 @@ test('Merge sync', function(t){
   b.post({b:2}, tx);
   b.post({b:3}, tx);
 
+  var m = 6;
+
+  sync(a);
+  sync(b);
+
   tx.commit(function(){
     var result, changes;
-    server.liveStream().drop(5).pull(function(err, data){
+    server.liveStream().drop(m - 1).pull(function(){
       server.readStream().toArray(function(arr){
         result = arr;
-        t.equal(arr.length, 6, 'server sync result');
+        t.equal(arr.length, m, 'server sync result');
       });
       server.changesStream({clocks: []}).toArray(function(arr){
         changes = arr;
-        t.equal(arr.length, 6, 'server sync changes');
+        t.equal(arr.length, m, 'server sync changes');
       });
     });
-    a.liveStream().drop(5).pull(function(err, data){
+    a.liveStream().drop(m - 1).pull(function(){
       a.readStream().toArray(function(arr){
         t.deepEqual(arr, result, 'a equals server result');
       });
@@ -589,7 +594,7 @@ test('Merge sync', function(t){
         t.deepEqual(arr, changes, 'a equals server changes');
       });
     });
-    b.liveStream().drop(5).pull(function(err, data){
+    b.liveStream().drop(m - 1).pull(function(){
       b.readStream().toArray(function(arr){
         t.deepEqual(arr, result, 'b equals server result');
       });
@@ -597,7 +602,5 @@ test('Merge sync', function(t){
         t.deepEqual(arr, changes, 'b equals server changes');
       });
     });
-    sync(a);
-    sync(b);
   });
 });
