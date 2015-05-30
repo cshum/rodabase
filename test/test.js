@@ -559,7 +559,7 @@ test('pipes', function(t){
 });
 
 test('Merge sync', function(t){
-  t.plan(3);
+  t.plan(6);
 
   var server = roda('server');
   var a = roda('a2');
@@ -582,26 +582,33 @@ test('Merge sync', function(t){
   b.post({b:2}, tx);
   b.post({b:3}, tx);
 
-  var results = { server: [], a: [], b: [] };
-
   tx.commit(function(){
-    server.liveStream().each(function(data){
-      results.server.push(data);
-      if(results.server.length === 6){
-        t.pass('server Ok');
-      }
+    var result, changes;
+    server.liveStream().drop(5).pull(function(err, data){
+      server.readStream().toArray(function(arr){
+        result = arr;
+        t.equal(arr.length, 6, 'server sync result');
+      });
+      server.changesStream({clocks: []}).toArray(function(arr){
+        changes = arr;
+        t.equal(arr.length, 6, 'server sync changes');
+      });
     });
-    a.liveStream().each(function(data){
-      results.a.push(data);
-      if(results.a.length === 6){
-        t.deepEqual(results.a, results.server, 'a equals server');
-      }
+    a.liveStream().drop(5).pull(function(err, data){
+      a.readStream().toArray(function(arr){
+        t.deepEqual(arr, result, 'a equals server result');
+      });
+      a.changesStream({clocks: []}).toArray(function(arr){
+        t.deepEqual(arr, changes, 'a equals server changes');
+      });
     });
-    b.liveStream().each(function(data){
-      results.b.push(data);
-      if(results.b.length === 6){
-        t.deepEqual(results.b, results.server, 'b equals server');
-      }
+    b.liveStream().drop(5).pull(function(err, data){
+      b.readStream().toArray(function(arr){
+        t.deepEqual(arr, result, 'b equals server result');
+      });
+      b.changesStream({clocks: []}).toArray(function(arr){
+        t.deepEqual(arr, changes, 'b equals server changes');
+      });
     });
     sync(a);
     sync(b);
