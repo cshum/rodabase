@@ -22,24 +22,25 @@ $ npm install rodabase leveldown
 - [Basics](#basics)
   - [rodabase(path, [options])](#rodabasepath-options)
   - [roda(name)](#rodaname)
-  - [.put([id], doc, [tx], [cb])](#putid-doc-tx-cb)
+  - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
+  - [.put(id, doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
-- [Index](#index)
-  - [.index(name, mapper)](#indexname-mapper)
+  - [.mapper(name, fn)](#mappername-fn)
   - [.readStream([options])](#readstreamoptions)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-- [Changes](#changes)
-  - [.clockStream()](#clockstream)
+- [Changes and Replication](#changes-and-replication)
   - [.liveStream()](#livestream)
-  - [.changeStream([options])](#changestreamoptions)
-- [Replication](#replication)
-  - [.mergeStream()](#mergestream)
-  - [.use('conflict', [hook...])](#useconflict-hook)
+  - [.clockStream()](#clockstream)
+  - [.changesStream([options])](#changesstreamoptions)
+  - [.replicateStream([options])](#replicatestreamoptions)
   - [.pipe(roda)](#piperoda)
+- [Conflict Resolution](#conflict-resolution)
+  - [.use('conflict', [hook...])](#useconflict-hook)
+  - [.resolver(fn)](#resolverfn)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -56,8 +57,7 @@ var roda = rodabase('./db');
 
 All operations are asynchronous although they don't necessarily require a callback.
 
-####.create([id], doc, [tx], [cb])
-####.update(id, doc, [tx], [cb])
+####.post(doc, [tx], [cb])
 ####.put(id, doc, [tx], [cb])
 Inserting, updating data into Rodabase. 
 
@@ -67,28 +67,33 @@ Inserting, updating data into Rodabase.
 
 ```js
 //specify _id
-roda('stuff').put('bob', { foo: 'bar' });
+roda('store').put('bob', { foo: 'bar' }, cb);
+/*
+{ 
+  "_id": "bob",
+  "foo": "bar", 
+  "_rev": "5U42CUvHEz"
+} 
+*/
 
 //auto generated _id
-roda('stuff').put({ foo: 'bar' }, function(err, res){
-  if(err) 
-    return console.error('Error: ', err);
-
-  console.log(res);
-}); 
-
-```
-Auto generated _id is a 20 chars, URL-safe, base64 time sorted unique ID.
-
-Example result:
-```json
+roda('store').post({ foo: 'bar' }, cb);
+/*
 { 
   "_id": "FZBJIBTCaLEJk8924J0A",
   "foo": "bar", 
-  "_rev": "k8924J0AFZ"
+  "_rev": "5U42CUvHF"
+} 
+*/
+
+function cb(err, res){
+  if(err) 
+    return console.error('Error: ', err);
+  console.log(res);
 } 
 
 ```
+Auto generated _id is a 20 chars, URL-safe, base64 time sorted unique ID.
 
 ####.get(id, [tx], [cb])
 Fetching data from Rodabase.
@@ -105,21 +110,21 @@ Removes data from Rodabase.
 * `id`: Primary key under the namespace. Must be a string.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
-###Index Mapper
-####.index(name, mapper)
+####.mapper(name, fn)
 #####emit(key, [doc], [unique])
 
 ```js
 var users = roda('users');
 
-users.index('email', function(doc, emit){
+users.mapper('email', function(doc, emit){
   emit(doc.email, true); //unique
 });
-users.index('age', function(doc, emit){
-  emit(doc.age); //non-unique
+users.mapper('age', function(doc, emit){
+  emit(doc.age); //can be non-unique
 });
 
-users.readStream({ index: 'age', gt: 15 }); //users over age 15
+users.readStream({ map: 'age', gt: 15 }).pipe(process.stdout); //users over age 15
+users.readStream({ map: 'email', eq: 'adrian@cshum.com' }).toArray(log); //user of email 'adrian@cshum.com'
 
 ```
 ####.readStream([options])
@@ -252,33 +257,33 @@ tx.commit(function(){
 
 ###Changes and Replication
 
+####.liveStream()
+
 ####.clockStream()
 
 Readable stream for [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps) of the Roda.
 Everytime a write operation is committed its logical clock is incremented.
 
-####.liveStream()
-####.changeStream([options])
-* `_last` last timestamp under revision prefix. This keeps execution order for `mergeStream()`.
-* `_deleted` denotes delete of the document. 
-* `_from` **Gets From**: If `a` is a put operation and `b` is a get operation that returns the value written by a, then `a ~ b`.
+####.changesStream([options])
 
-
-###Replication
-####.mergeStream()
+####.replicateStream([options])
 Changes will be queued up until `_last` matches destination timestamp.
 ```js
 var a = roda('a');
 var b = roda('b');
-b.clockStream().pipe(a.changeStream()).pipe(b.mergeStream());
+b.clockStream().pipe(a.changesStream()).pipe(b.replicateStream());
 ```
-####.use('conflict', [hook...])
 ####.pipe(roda)
 ```js
 //equivalent
 roda('a').pipe('b');
 roda('a').pipe(roda('b'));
 roda('b').clockStream()
-  .pipe(roda('a').changeStream({live: true}))
-  .pipe(roda('b').mergeStream());
+  .pipe(roda('a').changesStream({live: true}))
+  .pipe(roda('b').replicateStream());
 ```
+
+###Conflict Resolution
+
+####.use('conflict', [hook...])
+####.resolver(fn)
