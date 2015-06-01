@@ -550,7 +550,7 @@ test('Replication', function(t){
   pipe(b, a);
   pipe(a, c);
 
-  for(i = 0; i< 5; i++){
+  for(i = 0; i < 5; i++){
     pipe(a, d);
     pipe(b, d);
     pipe(c, d);
@@ -565,7 +565,6 @@ test('Replication merge sync', function(t){
   var server = roda('server');
   var a = roda('a2');
   var b = roda('b2');
-  var tx = roda.transaction();
 
   function sync(client){
     server.clockStream()
@@ -587,27 +586,25 @@ test('Replication merge sync', function(t){
   a.use('conflict', conflict);
   b.use('conflict', conflict);
 
-  a.post({a:1}, tx);
-  a.post({a:2}, tx);
-  a.post({a:3}, tx);
-  b.post({b:1}, tx);
-  b.post({b:2}, tx);
-  b.post({b:3}, tx);
+  for(var i = 0; i < n; i++){
+    a.post({ a: i });
+    b.post({ b: i });
+  }
 
   var result;
 
-  server.liveStream().drop(6 - 1).pull(function(){
+  server.liveStream().drop(n*2 - 1).pull(function(){
     server.readStream().toArray(function(arr){
       result = arr;
-      t.equal(arr.length, 6, 'server sync from a b');
+      t.equal(arr.length, n*2, 'server sync from a b');
     });
   });
-  a.liveStream().drop(3 + 6 - 1).pull(function(){
+  a.liveStream().drop(n*2 + n - 1).pull(function(){
     a.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'a equals server result');
     });
   });
-  b.liveStream().drop(3 + 6 - 1).pull(function(){
+  b.liveStream().drop(n*2 + n - 1).pull(function(){
     b.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'b equals server result');
     });
@@ -615,7 +612,5 @@ test('Replication merge sync', function(t){
 
   sync(a);
   sync(b);
-
-  tx.commit();
 });
 
