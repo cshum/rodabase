@@ -510,23 +510,36 @@ test('Mapper and Range', function(t){
   });
 });
 
-test('pipes', function(t){
+test('Replication', function(t){
   t.plan(3);
+
+  function pipe(source, dest){
+    dest.clockStream()
+      .pipe(source.changesStream({ live: true }))
+      .pipe(dest.replicateStream());
+  }
 
   var a = roda('a1');
   var b = roda('b1');
   var c = roda('c1');
   var d = roda('d1');
-  var i;
+  var i, result;
 
   a.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    t.pass('b pipe a');
+    a.readStream().toArray(function(arr){
+      result = arr;
+      t.equal(result.length, n*2, 'b to a');
+    });
   });
   c.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    t.pass('a pipe c');
+    c.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'a to c');
+    });
   });
   d.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    t.pass('sink');
+    d.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'sink');
+    });
   });
 
   for(i = 0; i < n; i++)
@@ -534,18 +547,19 @@ test('pipes', function(t){
   for(i = 0; i < n; i++)
     b.post({b:i});
 
-  b.pipe(a).pipe(c);
+  pipe(b, a);
+  pipe(a, c);
 
   for(i = 0; i< 5; i++){
-    a.pipe(d);
-    b.pipe(d);
-    c.pipe(d);
-    d.pipe(d);
+    pipe(a, d);
+    pipe(b, d);
+    pipe(c, d);
+    pipe(d, d);
   }
 
 });
 
-test('Merge sync', function(t){
+test('Replication merge sync', function(t){
   t.plan(3);
 
   var server = roda('server');
@@ -553,13 +567,13 @@ test('Merge sync', function(t){
   var b = roda('b2');
   var tx = roda.transaction();
 
-  function sync(api){
+  function sync(client){
     server.clockStream()
-      .pipe(api.changesStream({ live: true }))
+      .pipe(client.changesStream({ live: true }))
       .pipe(server.replicateStream({ merge: true }));
-    api.clockStream()
+    client.clockStream()
       .pipe(server.changesStream({ live: true }))
-      .pipe(api.replicateStream());
+      .pipe(client.replicateStream());
   }
   function conflict(ctx, next){
     t.error({
@@ -580,29 +594,28 @@ test('Merge sync', function(t){
   b.post({b:2}, tx);
   b.post({b:3}, tx);
 
-  var m = 6;
+  var result;
+
+  server.liveStream().drop(6 - 1).pull(function(){
+    server.readStream().toArray(function(arr){
+      result = arr;
+      t.equal(arr.length, 6, 'server sync from a b');
+    });
+  });
+  a.liveStream().drop(3 + 6 - 1).pull(function(){
+    a.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'a equals server result');
+    });
+  });
+  b.liveStream().drop(3 + 6 - 1).pull(function(){
+    b.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'b equals server result');
+    });
+  });
 
   sync(a);
   sync(b);
 
-  tx.commit(function(){
-    var changes;
-    server.liveStream().drop(m - 1).pull(function(){
-      server.changesStream({clocks: []}).toArray(function(arr){
-        changes = arr;
-        t.equal(arr.length, m, 'server sync changes');
-      });
-    });
-    a.liveStream().drop(m - 1).pull(function(){
-      a.changesStream({clocks: []}).toArray(function(arr){
-        t.deepEqual(arr, changes, 'a equals server changes');
-      });
-    });
-    b.liveStream().drop(m - 1).pull(function(){
-      b.changesStream({clocks: []}).toArray(function(arr){
-        t.deepEqual(arr, changes, 'b equals server changes');
-      });
-    });
-  });
+  tx.commit();
 });
 

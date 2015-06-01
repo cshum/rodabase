@@ -267,20 +267,36 @@ Everytime a write operation is committed its logical clock is incremented.
 ####.changesStream([options])
 
 ####.replicateStream([options])
+
 Changes will be queued up until `_last` matches destination timestamp.
+
+Master-master replication.
 ```js
 var a = roda('a');
 var b = roda('b');
-b.clockStream().pipe(a.changesStream()).pipe(b.replicateStream());
+
+//a to b
+b.clockStream()
+  .pipe(a.changesStream({ live: true }))
+  .pipe(b.replicateStream());
+
+//b to a
+a.clockStream()
+  .pipe(b.changesStream({ live: true }))
+  .pipe(a.replicateStream());
 ```
-####.pipe(roda)
+
+Client-server replication. Client's `_rev` will be 'merged' with server's roda, such that size of vector clock will not increase with number of clients.
 ```js
-//equivalent
-roda('a').pipe('b');
-roda('a').pipe(roda('b'));
-roda('b').clockStream()
-  .pipe(roda('a').changesStream({live: true}))
-  .pipe(roda('b').replicateStream());
+//client to server
+server.clockStream()
+  .pipe(client.changesStream({ live: true }))
+  .pipe(server.replicateStream({ merge: true }));
+
+//server to client
+client.clockStream()
+  .pipe(server.changesStream({ live: true }))
+  .pipe(client.replicateStream());
 ```
 
 ###Conflict Resolution
