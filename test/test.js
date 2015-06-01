@@ -546,7 +546,7 @@ test('pipes', function(t){
 });
 
 test('Merge sync', function(t){
-  t.plan(6);
+  t.plan(3);
 
   var server = roda('server');
   var a = roda('a2');
@@ -561,19 +561,17 @@ test('Merge sync', function(t){
       .pipe(server.changesStream({ live: true }))
       .pipe(api.replicateStream());
   }
+  function conflict(ctx, next){
+    t.error({
+      conflict: ctx.conflict,
+      result: ctx.result
+    },'must not conflict');
+    next();
+  }
 
-  server.use('conflict', function(ctx, next){
-    console.log(ctx.conflict, ctx.result);
-    next();
-  });
-  a.use('conflict', function(ctx, next){
-    console.log(ctx.conflict, ctx.result);
-    next();
-  });
-  b.use('conflict', function(ctx, next){
-    console.log(ctx.conflict, ctx.result);
-    next();
-  });
+  server.use('conflict', conflict);
+  a.use('conflict', conflict);
+  b.use('conflict', conflict);
 
   a.post({a:1}, tx);
   a.post({a:2}, tx);
@@ -588,32 +586,23 @@ test('Merge sync', function(t){
   sync(b);
 
   tx.commit(function(){
-    var result, changes;
+    var changes;
     server.liveStream().drop(m - 1).pull(function(){
-      server.readStream().toArray(function(arr){
-        result = arr;
-        t.equal(arr.length, m, 'server sync result');
-      });
       server.changesStream({clocks: []}).toArray(function(arr){
         changes = arr;
         t.equal(arr.length, m, 'server sync changes');
       });
     });
     a.liveStream().drop(m - 1).pull(function(){
-      a.readStream().toArray(function(arr){
-        t.deepEqual(arr, result, 'a equals server result');
-      });
       a.changesStream({clocks: []}).toArray(function(arr){
         t.deepEqual(arr, changes, 'a equals server changes');
       });
     });
     b.liveStream().drop(m - 1).pull(function(){
-      b.readStream().toArray(function(arr){
-        t.deepEqual(arr, result, 'b equals server result');
-      });
       b.changesStream({clocks: []}).toArray(function(arr){
         t.deepEqual(arr, changes, 'b equals server changes');
       });
     });
   });
 });
+
