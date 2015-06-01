@@ -9,7 +9,7 @@ Transactional, replicable document store for Node.js and browsers. Built on [Lev
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 
 ```bash
-$ npm install rodabase leveldown
+$ npm install rodabase leveldown@0.10.5
 ```
 [LevelDOWN](https://github.com/rvagg/node-leveldown) is the default backend store for LevelDB. 
 
