@@ -562,6 +562,19 @@ test('Merge sync', function(t){
       .pipe(api.replicateStream());
   }
 
+  server.use('conflict', function(ctx, next){
+    console.log(ctx.conflict, ctx.result);
+    next();
+  });
+  a.use('conflict', function(ctx, next){
+    console.log(ctx.conflict, ctx.result);
+    next();
+  });
+  b.use('conflict', function(ctx, next){
+    console.log(ctx.conflict, ctx.result);
+    next();
+  });
+
   a.post({a:1}, tx);
   a.post({a:2}, tx);
   a.post({a:3}, tx);
