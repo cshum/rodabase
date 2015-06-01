@@ -1,9 +1,9 @@
 #Rodabase
 
-Transactional document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
+Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
 * [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
-* Transactions enables linearizable consistency for local operations.
-* Multi-master replication mechanism preserving [casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf).
+* Transaction enables snapshot isolation and linearizable local operations.
+* [Casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf) preserving replication mechanisms.
 * Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB or WebSQL on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
@@ -15,25 +15,37 @@ $ npm install rodabase leveldown
 
 **License** MIT
 
+##API
+###rodabase(path, [options])
+
+```js
+var rodabase = require('rodabase');
+
+var roda = rodabase('./db');
+```
+
+###roda(name)
+
+All operations are asynchronous although they don't necessarily require a callback.
+
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-##API
+ 
 
-- [Basics](#basics)
-  - [rodabase(path, [options])](#rodabasepath-options)
-  - [roda(name)](#rodaname)
+- [CRUD](#crud)
   - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.put(id, doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.mapper(name, fn)](#mappername-fn)
   - [.readStream([options])](#readstreamoptions)
+  - [.liveStream()](#livestream)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-- [Changes and Replication](#changes-and-replication)
-  - [.liveStream()](#livestream)
+- [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
@@ -44,19 +56,7 @@ $ npm install rodabase leveldown
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-###Basics
-####rodabase(path, [options])
-
-```js
-var rodabase = require('rodabase');
-
-var roda = rodabase('./db');
-```
-
-####roda(name)
-
-All operations are asynchronous although they don't necessarily require a callback.
-
+###CRUD
 ####.post(doc, [tx], [cb])
 ####.put(id, doc, [tx], [cb])
 Inserting, updating data into Rodabase. 
@@ -137,9 +137,11 @@ users.readStream({ map: 'email', eq: 'adrian@cshum.com' }).toArray(log); //user 
   * `lte`
   * `eq`
 
+####.liveStream()
+
 ###Transaction
 
-What Rodabase mean in context of ACID:
+What Rodabase means in context of ACID:
 
 * **Atomicity**: Transactions complete either entirely or no effect at all. Inherent feature of [batched operations](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) in LevelDB.
 * **Consistency**: Rodabase allows fine-grain control over data integrity, validations, logging, consistently throughout the application.
@@ -231,14 +233,14 @@ Context object consists of the following properties:
 
 ```js
 var count = roda('count');
-var log = roda('log');
+var delta = roda('delta');
 
 count.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result.n || 0;
 
   //Transaction works across namespaces.
-  log.put({ delta: to - from }, ctx.transaction);
+  delta.put({ delta: to - from }, ctx.transaction);
 
   next();
 });
@@ -249,15 +251,13 @@ count.put('bob', { n: 8 }, tx);
 count.del('bob', tx);
 
 tx.commit(function(){
-  log.readStream().pluck('delta').toArray(function(data){
+  delta.readStream().pluck('delta').toArray(function(data){
     console.log(data); //[6, 2, -8]
   });
 });
 ```
 
-###Changes and Replication
-
-####.liveStream()
+###Replication
 
 ####.clockStream()
 
