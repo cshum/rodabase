@@ -578,10 +578,9 @@ test('Replication merge sync', function(t){
     t.error({
       conflict: ctx.conflict,
       result: ctx.result
-    },'must not conflict');
+    },'should not conflict');
     next();
   }
-
   server.use('conflict', conflict);
   a.use('conflict', conflict);
   b.use('conflict', conflict);
@@ -614,9 +613,8 @@ test('Replication merge sync', function(t){
   sync(b);
 });
 
-
 test('Replication casual ordering', function(t){
-  t.plan(3);
+  t.plan(6);
 
   var a = roda('a3');
   var b = roda('b3');
@@ -628,33 +626,49 @@ test('Replication casual ordering', function(t){
       .ratelimit(1, 100)
       .pipe(dest.replicateStream());
   }
+  function conflict(ctx, next){
+    t.error({
+      conflict: ctx.conflict,
+      result: ctx.result
+    },'should not conflict');
+    next();
+  }
+  a.use('conflict', conflict);
+  b.use('conflict', conflict);
   pipe(a, b);
   pipe(b, a);
 
   var tx = roda.transaction();
-  a.put('a0',{i:0}, tx);
-  a.put('a1',{i:1}, tx);
-  b.put('b0',{i:0}, tx);
-  b.put('b1',{i:1}, tx);
+
+  a.put('a1',{i:0}, tx);
+  a.put('a2',{i:0}, tx);
+
+  b.put('b1',{i:0}, tx);
+  b.put('b2',{i:0}, tx);
+
   tx.commit(function(){
-    b.liveStream().drop(1).pull(function(err, data){
-      data.b = 2;
+    b.liveStream().pull(function(err, data){
+      data.i = 1;
       b.put('a1', data);
     });
     a.liveStream().drop(1).pull(function(err, data){
-      data.a = 2;
+      data.i = 1;
       a.put('b1', data);
     });
     setTimeout(function(){
       pipe(a, c);
     }, 500);
   });
-  c.liveStream().map(function(data){
-    // console.log(data);
-    return data;
-  }).take(4).collect().pull(function(err, arr){
-    console.log(arr);
-  });
+  var current = {};
+  c.liveStream()
+    .pluck('_rev')
+    .take(6)
+    .each(function(rev){
+      var mid = rev.slice(0,8);
+      var time = rev.slice(8);
+      t.ok(!current[mid] || time > current[mid], 'casual ordering');
+      current[mid] = time;
+    });
 
 });
 
