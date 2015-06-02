@@ -649,7 +649,10 @@ test('Replication casual ordering', function(t){
       pipe(a, c);
     }, 500);
   });
-  c.liveStream().take(4).collect().pull(function(err, arr){
+  c.liveStream().map(function(data){
+    // console.log(data);
+    return data;
+  }).take(4).collect().pull(function(err, arr){
     console.log(arr);
   });
 
