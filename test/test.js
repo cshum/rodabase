@@ -622,23 +622,12 @@ test('Replication casual ordering', function(t){
   var b = roda('b3');
   var c = roda('c3');
 
-  function conflict(ctx, next){
-    t.error({
-      conflict: ctx.conflict,
-      result: ctx.result
-    },'must not conflict');
-    next();
-  }
   function pipe(source, dest, delay){
     dest.clockStream()
       .pipe(source.changesStream({ live: true }))
       .ratelimit(1, 100)
       .pipe(dest.replicateStream());
   }
-  a.use('conflict', conflict);
-  b.use('conflict', conflict);
-  c.use('conflict', conflict);
-
   pipe(a, b);
   pipe(b, a);
 
@@ -658,17 +647,10 @@ test('Replication casual ordering', function(t){
     });
     setTimeout(function(){
       pipe(a, c);
-      console.log('diu');
-    }, 1000);
+    }, 500);
   });
-  c.liveStream().map(function(data){
-    console.log('diu', data);
-    return data;
-  }).take(6).collect().pull(function(err, arr){
-    console.log('c', arr);
-  });
-  a.liveStream().take(6).collect().pull(function(err, arr){
-    console.log('a', arr);
+  c.liveStream().take(4).collect().pull(function(err, arr){
+    console.log(arr);
   });
 
 });
