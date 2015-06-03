@@ -510,14 +510,22 @@ test('Mapper and Range', function(t){
   });
 });
 
+function sync(client, server){
+  server.clockStream()
+    .pipe(client.changesStream({ live: true }))
+    .pipe(server.replicateStream({ merge: true }));
+  client.clockStream()
+    .pipe(server.changesStream({ live: true }))
+    .pipe(client.replicateStream());
+}
+function pipe(source, dest){
+  dest.clockStream()
+    .pipe(source.changesStream({ live: true }))
+    .pipe(dest.replicateStream());
+}
+
 test('Replication', function(t){
   t.plan(3);
-
-  function pipe(source, dest){
-    dest.clockStream()
-      .pipe(source.changesStream({ live: true }))
-      .pipe(dest.replicateStream());
-  }
 
   var a = roda('a1');
   var b = roda('b1');
@@ -550,6 +558,7 @@ test('Replication', function(t){
   pipe(b, a);
   pipe(a, c);
 
+  //stress
   for(i = 0; i < 5; i++){
     pipe(a, d);
     pipe(b, d);
@@ -559,21 +568,15 @@ test('Replication', function(t){
 
 });
 
-test('Replication merge sync', function(t){
-  t.plan(3);
+test('Replication merge', function(t){
+  t.plan(5);
 
   var server = roda('server');
+  var server2 = roda('server2');
   var a = roda('a2');
   var b = roda('b2');
+  var c = roda('c2');
 
-  function sync(client){
-    server.clockStream()
-      .pipe(client.changesStream({ live: true }))
-      .pipe(server.replicateStream({ merge: true }));
-    client.clockStream()
-      .pipe(server.changesStream({ live: true }))
-      .pipe(client.replicateStream());
-  }
   function conflict(ctx, next){
     t.error({
       conflict: ctx.conflict,
@@ -582,8 +585,10 @@ test('Replication merge sync', function(t){
     next();
   }
   server.use('conflict', conflict);
+  server2.use('conflict', conflict);
   a.use('conflict', conflict);
   b.use('conflict', conflict);
+  c.use('conflict', conflict);
 
   for(var i = 0; i < n; i++){
     a.post({ a: i });
@@ -595,7 +600,13 @@ test('Replication merge sync', function(t){
   server.liveStream().drop(n*2 - 1).pull(function(){
     server.readStream().toArray(function(arr){
       result = arr;
-      t.equal(arr.length, n*2, 'server sync from a b');
+      t.equal(arr.length, n*2, 'server syncs from a b');
+    });
+  });
+  server2.liveStream().drop(n*2 - 1).pull(function(){
+    server2.readStream().toArray(function(arr){
+      result = arr;
+      t.equal(arr.length, n*2, 'server2 syncs from a b');
     });
   });
   a.liveStream().drop(n*2 + n - 1).pull(function(){
@@ -608,24 +619,33 @@ test('Replication merge sync', function(t){
       t.deepEqual(arr, result, 'b equals server result');
     });
   });
+  c.liveStream().drop(n*2 - 1).pull(function(){
+    c.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'c equals server result');
+    });
+  });
 
-  sync(a);
-  sync(b);
+  pipe(server, server2);
+  pipe(server2, server);
+  sync(a, server);
+  sync(b, server2);
+  sync(c, server2);
 });
 
 test('Replication casual ordering', function(t){
   t.plan(6);
 
+  function pipe(source, dest, delay){
+    dest.clockStream()
+      .pipe(source.changesStream({ live: true }))
+      .ratelimit(1, 51) //break 50ms debounce
+      .pipe(dest.replicateStream());
+  }
+
   var a = roda('a3');
   var b = roda('b3');
   var c = roda('c3');
 
-  function pipe(source, dest, delay){
-    dest.clockStream()
-      .pipe(source.changesStream({ live: true }))
-      .ratelimit(1, 100)
-      .pipe(dest.replicateStream());
-  }
   function conflict(ctx, next){
     t.error({
       conflict: ctx.conflict,
