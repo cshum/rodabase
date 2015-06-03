@@ -569,7 +569,7 @@ test('Replication', function(t){
 });
 
 test('Replication merge', function(t){
-  t.plan(5);
+  t.plan(6);
 
   var server = roda('server');
   var server2 = roda('server2');
@@ -599,13 +599,19 @@ test('Replication merge', function(t){
 
   server.liveStream().drop(n*2 - 1).pull(function(){
     server.readStream().toArray(function(arr){
-      result = arr;
+      if(result){
+        t.deepEqual(arr, result, 'server equals server2 result');
+      }else
+        result = arr;
       t.equal(arr.length, n*2, 'server syncs from a b');
     });
   });
   server2.liveStream().drop(n*2 - 1).pull(function(){
     server2.readStream().toArray(function(arr){
-      result = arr;
+      if(result){
+        t.deepEqual(arr, result, 'server equals server2 result');
+      }else
+        result = arr;
       t.equal(arr.length, n*2, 'server2 syncs from a b');
     });
   });
