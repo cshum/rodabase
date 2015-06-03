@@ -644,7 +644,7 @@ test('Replication casual ordering', function(t){
   function pipe(source, dest, delay){
     dest.clockStream()
       .pipe(source.changesStream({ live: true }))
-      .ratelimit(1, 51) //break 50ms debounce
+      .ratelimit(1, 50) //break debounce
       .pipe(dest.replicateStream());
   }
 
