@@ -223,56 +223,17 @@ test('Transaction middleware: Validate', function(t){
 });
 
 test('Transaction middleware: diff', function(t){
-  t.plan(5);
-  roda('5').use('diff', function(ctx, next){
-    roda('5.1').put(ctx.result._id, {
-      i: ctx.result.i * 10
-    }, ctx.transaction);
-    next();
-  });
-  var tx = roda.transaction();
-  var i;
-
-  for(i = 0; i < n; i++)
-    roda('5').put(util.encodeNumber(i), { i: i }, tx);
-  for(i = 0; i < n; i++)
-    roda('5').put(util.encodeNumber(i), { i: i }, tx); //redundant put
-
-  for(i = 0; i < n; i+=3)
-    roda('5').del(util.encodeNumber(i), tx);
-  for(i = 0; i < n; i+=3)
-    roda('5').del(util.encodeNumber(i), tx); //non-exist del
-  for(i = 0; i < n; i+=2)
-    roda('5.1').del(util.encodeNumber(i), tx);
-
-  tx.commit(function(err){
-    t.notOk(err, 'commit success');
-
-    roda('5').readStream().toArray(function(list){
-      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
-    });
-    roda('5').changesStream({clocks:[]}).toArray(function(changes){
-      t.equal(changes.length, n, 'changes n length');
-    });
-    roda('5.1').readStream().toArray(function(list){
-      t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
-    });
-    roda('5.1').changesStream({clocks:[]}).toArray(function(list){
-      t.equal(list.length, n, 'hook changes n length');
-    });
-  });
-});
-
-test('Transaction middleware: diff 2', function(t){
   t.plan(7);
   roda('6').use('diff', function(ctx, next){
-    roda('6.1').put(ctx.result._id, {
-      i: ctx.result.i * 10
-    }, ctx.transaction);
-    //redundant
-    roda('6.1').put(ctx.result._id, {
-      i: ctx.result.i * 10
-    }, ctx.transaction);
+    if(!ctx.result._deleted){
+      roda('6.1').put(ctx.result._id, {
+        i: ctx.result.i * 10
+      }, ctx.transaction);
+      //redundant
+      roda('6.1').put(ctx.result._id, {
+        i: ctx.result.i * 10
+      }, ctx.transaction);
+    }
     next();
   });
   roda('6.1').use('diff', function(ctx, next){
