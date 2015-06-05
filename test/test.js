@@ -659,3 +659,46 @@ test('Replication casual ordering', function(t){
 
 });
 
+test('Replication conflict', function(t){
+  t.plan(1);
+
+  var a = roda('a4');
+  var b = roda('b4');
+  var c = roda('c4');
+
+  function conflict(ctx, next){
+    console.log({
+      conflict: ctx.conflict,
+      result: ctx.result
+    });
+    c.push({
+      conflict: ctx.conflict,
+      result: ctx.result
+    }, ctx.transaction);
+    next();
+  }
+  a.use('conflict', conflict);
+  b.use('conflict', conflict);
+
+  c.liveStream().drop(n - 1).pull(function(err, doc){
+    c.readStream().map(function(data){
+      console.log(data);
+      return data;
+    }).toArray(function(arr){
+      t.equal(arr.length, n, 'n conflicts');
+    });
+  });
+
+  var tx = roda.transaction();
+  _.shuffle(_.range(n)).forEach(function(i){
+    a.put(i, {a:i}, tx);
+  });
+  _.shuffle(_.range(n)).forEach(function(i){
+    b.put(i, {b:i}, tx);
+  });
+  //a b will randomly conflict
+  tx.commit(function(){
+    pipe(b, a);
+    pipe(a, b);
+  });
+});
