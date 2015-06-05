@@ -742,10 +742,7 @@ test('Replication merge conflict', function(t){
       t.equal(arr.length, n, 'n results');
     }
   }
-  a.liveStream().map(function(data){
-    console.log(data);
-    return data;
-  }).drop(n + n - 1).pull(function(){
+  a.liveStream().drop(n + n - 1).pull(function(){
     a.readStream().toArray(read);
   });
   b.liveStream().drop(n + n - 1).pull(function(){
@@ -761,7 +758,7 @@ test('Replication merge conflict', function(t){
     b.put(i, {b:i}, tx);
   });
   tx.commit(function(){
-    pipe(b, server);
-    pipe(a, server);
+    sync(b, server);
+    sync(a, server);
   });
 });
