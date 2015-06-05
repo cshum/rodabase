@@ -530,7 +530,7 @@ test('Replication', function(t){
 });
 
 test('Replication merge', function(t){
-  t.plan(6);
+  t.plan(5);
 
   var server = roda('server');
   var server2 = roda('server2');
@@ -557,24 +557,20 @@ test('Replication merge', function(t){
   }
 
   var result;
+  function read(arr){
+    if(result){
+      t.deepEqual(arr, result, 'server equals server2 result');
+    }else{
+      result = arr;
+      t.equal(arr.length, n*2, 'server syncs from a b');
+    }
+  }
 
   server.liveStream().drop(n*2 - 1).pull(function(){
-    server.readStream().toArray(function(arr){
-      if(result){
-        t.deepEqual(arr, result, 'server equals server2 result');
-      }else
-        result = arr;
-      t.equal(arr.length, n*2, 'server syncs from a b');
-    });
+    server.readStream().toArray(read);
   });
   server2.liveStream().drop(n*2 - 1).pull(function(){
-    server2.readStream().toArray(function(arr){
-      if(result){
-        t.deepEqual(arr, result, 'server equals server2 result');
-      }else
-        result = arr;
-      t.equal(arr.length, n*2, 'server2 syncs from a b');
-    });
+    server2.readStream().toArray(read);
   });
   a.liveStream().drop(n*2 + n - 1).pull(function(){
     a.readStream().toArray(function(arr){
@@ -660,43 +656,45 @@ test('Replication casual ordering', function(t){
 });
 
 test('Replication conflict', function(t){
-  t.plan(1);
+  t.plan(3);
 
   var a = roda('a4');
   var b = roda('b4');
   var c = roda('c4');
 
   function conflict(ctx, next){
-    console.log({
-      conflict: ctx.conflict,
-      result: ctx.result
-    });
-    c.push({
-      conflict: ctx.conflict,
-      result: ctx.result
-    }, ctx.transaction);
+    //conflicted document post into c
+    c.post(ctx.conflict, ctx.transaction);
     next();
   }
   a.use('conflict', conflict);
   b.use('conflict', conflict);
 
   c.liveStream().drop(n - 1).pull(function(err, doc){
-    c.readStream().map(function(data){
-      console.log(data);
-      return data;
-    }).toArray(function(arr){
+    c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'n conflicts');
     });
+    var result;
+    function read(arr){
+      if(result){
+        t.deepEqual(result, arr, 'a equals b result');
+      }else{
+        result = arr;
+        t.equal(arr.length, n, 'n results');
+      }
+    }
+    a.readStream().toArray(read);
+    b.readStream().toArray(read);
   });
 
   var tx = roda.transaction();
+  //docs in a b will randomly conflict
   _.shuffle(_.range(n)).forEach(function(i){
     a.put(i, {a:i}, tx);
   });
   _.shuffle(_.range(n)).forEach(function(i){
     b.put(i, {b:i}, tx);
   });
-  //a b will randomly conflict
   tx.commit(function(){
     pipe(b, a);
     pipe(a, b);
