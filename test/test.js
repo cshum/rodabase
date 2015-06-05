@@ -700,3 +700,49 @@ test('Replication conflict', function(t){
     pipe(a, b);
   });
 });
+
+test('Replication merge conflict', function(t){
+  t.plan(3);
+
+  var server = roda('serverC');
+  var a = roda('a5');
+  var b = roda('b5');
+  var c = roda('c5');
+
+  function conflict(ctx, next){
+    //conflicted document post into c
+    c.post(ctx.conflict, ctx.transaction);
+    next();
+  }
+  server.use('conflict', conflict);
+
+  c.liveStream().drop(n - 1).pull(function(err, doc){
+    c.readStream().toArray(function(arr){
+      t.equal(arr.length, n, 'n conflicts');
+    });
+    var result;
+    function read(arr){
+      if(result){
+        t.deepEqual(result, arr, 'a equals b result');
+      }else{
+        result = arr;
+        t.equal(arr.length, n, 'n results');
+      }
+    }
+    a.readStream().toArray(read);
+    b.readStream().toArray(read);
+  });
+
+  var tx = roda.transaction();
+  //docs in a b will randomly conflict
+  _.shuffle(_.range(n)).forEach(function(i){
+    a.put(i, {a:i}, tx);
+  });
+  _.shuffle(_.range(n)).forEach(function(i){
+    b.put(i, {b:i}, tx);
+  });
+  tx.commit(function(){
+    pipe(b, server);
+    pipe(a, server);
+  });
+});
