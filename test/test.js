@@ -702,34 +702,53 @@ test('Replication conflict', function(t){
 });
 
 test('Replication merge conflict', function(t){
-  t.plan(3);
+  t.plan(4);
 
   var server = roda('serverC');
   var a = roda('a5');
   var b = roda('b5');
   var c = roda('c5');
+  var c2 = roda('c5.2');
 
-  function conflict(ctx, next){
+  server.use('conflict', function(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
     next();
+  });
+  function conflict(ctx, next){
+    //conflicted document post into c
+    c2.post(ctx.conflict, ctx.transaction);
+    next();
   }
-  server.use('conflict', conflict);
+  a.use('conflict', conflict);
+  b.use('conflict', conflict);
 
   c.liveStream().drop(n - 1).pull(function(err, doc){
     c.readStream().toArray(function(arr){
-      t.equal(arr.length, n, 'n conflicts');
+      t.equal(arr.length, n, 'server n conflicts');
     });
-    var result;
-    function read(arr){
-      if(result){
-        t.deepEqual(result, arr, 'a equals b result');
-      }else{
-        result = arr;
-        t.equal(arr.length, n, 'n results');
-      }
+  });
+  c2.liveStream().drop(n - 1).pull(function(err, doc){
+    c2.readStream().toArray(function(arr){
+      t.equal(arr.length, n, 'clients n conflicts');
+    });
+  });
+  var result;
+  function read(arr){
+    if(result){
+      t.deepEqual(result, arr, 'a equals b result');
+    }else{
+      result = arr;
+      t.equal(arr.length, n, 'n results');
     }
+  }
+  a.liveStream().map(function(data){
+    console.log(data);
+    return data;
+  }).drop(n + n - 1).pull(function(){
     a.readStream().toArray(read);
+  });
+  b.liveStream().drop(n + n - 1).pull(function(){
     b.readStream().toArray(read);
   });
 
