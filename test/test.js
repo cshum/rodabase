@@ -709,16 +709,6 @@ test('Replication merge conflict', function(t){
   var b = roda('b5');
   var c = roda('c5');
 
-  function noConflict(ctx, next){
-    t.error({
-      conflict: ctx.conflict,
-      result: ctx.result
-    },'should not conflict');
-    next();
-  }
-  a.use('conflict', noConflict);
-  b.use('conflict', noConflict);
-
   server.use('conflict', function(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
