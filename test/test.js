@@ -609,15 +609,15 @@ test('Replication casual ordering', function(t){
   var b = roda('b3');
   var c = roda('c3');
 
-  function conflict(ctx, next){
+  function noConflict(ctx, next){
     t.error({
       conflict: ctx.conflict,
       result: ctx.result
     },'should not conflict');
     next();
   }
-  a.use('conflict', conflict);
-  b.use('conflict', conflict);
+  a.use('conflict', noConflict);
+  b.use('conflict', noConflict);
   pipe(a, b);
   pipe(b, a);
 
@@ -709,6 +709,16 @@ test('Replication merge conflict', function(t){
   var b = roda('b5');
   var c = roda('c5');
 
+  function noConflict(ctx, next){
+    t.error({
+      conflict: ctx.conflict,
+      result: ctx.result
+    },'should not conflict');
+    next();
+  }
+  a.use('conflict', noConflict);
+  b.use('conflict', noConflict);
+
   server.use('conflict', function(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
@@ -728,13 +738,13 @@ test('Replication merge conflict', function(t){
     c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
-    server.readStream().pick(['a','b']).toArray(read);
+    server.readStream().toArray(read);
   });
   a.liveStream().debounce(300).each(function(){
-    a.readStream().pick(['a','b']).toArray(read);
+    a.readStream().toArray(read);
   });
   b.liveStream().debounce(300).each(function(){
-    b.readStream().pick(['a','b']).toArray(read);
+    b.readStream().toArray(read);
   });
 
   var tx = roda.transaction();
