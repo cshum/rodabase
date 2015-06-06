@@ -702,7 +702,7 @@ test('Replication conflict', function(t){
 });
 
 test('Replication merge conflict', function(t){
-  t.plan(5);
+  t.plan(4);
 
   var server = roda('serverC');
   var a = roda('a5');
@@ -711,7 +711,6 @@ test('Replication merge conflict', function(t){
 
   server.use('conflict', function(ctx, next){
     //conflicted document post into c
-    // console.log(this.name(), ctx.conflict, ctx.result);
     c.post(ctx.conflict, ctx.transaction);
     next();
   });
@@ -719,7 +718,7 @@ test('Replication merge conflict', function(t){
   var result;
   function read(arr){
     if(result){
-      t.deepEqual(result, arr, 'a equals b result');
+      t.deepEqual(arr, result, 'a equals b result');
     }else{
       result = arr;
       t.equal(arr.length, n, 'n results');
@@ -729,12 +728,12 @@ test('Replication merge conflict', function(t){
     c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
-    c.readStream().pick(['a','b']).toArray(read);
+    server.readStream().pick(['a','b']).toArray(read);
   });
-  a.liveStream().drop(n * 2 - 1).pull(function(){
+  a.liveStream().debounce(300).each(function(){
     a.readStream().pick(['a','b']).toArray(read);
   });
-  b.liveStream().drop(n * 2 - 1).pull(function(){
+  b.liveStream().debounce(300).each(function(){
     b.readStream().pick(['a','b']).toArray(read);
   });
 
