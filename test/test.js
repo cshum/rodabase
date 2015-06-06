@@ -730,10 +730,10 @@ test('Replication merge conflict', function(t){
     });
     server.readStream().toArray(read);
   });
-  a.liveStream().debounce(300).each(function(){
+  a.liveStream().debounce(500).each(function(){
     a.readStream().toArray(read);
   });
-  b.liveStream().debounce(300).each(function(){
+  b.liveStream().debounce(500).each(function(){
     b.readStream().toArray(read);
   });
 
