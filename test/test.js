@@ -728,7 +728,7 @@ test('Replication merge conflict', function(t){
   var result;
   function read(arr){
     if(result){
-      t.deepEqual(arr, result, 'a equals b result');
+      t.deepEqual(arr, result, 'result consistent');
     }else{
       result = arr;
       t.equal(arr.length, n, 'n results');
