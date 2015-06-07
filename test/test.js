@@ -702,18 +702,21 @@ test('Replication conflict', function(t){
 });
 
 test('Replication merge conflict', function(t){
-  t.plan(4);
+  t.plan(5);
 
   var server = roda('serverC');
+  var server2 = roda('serverC2');
   var a = roda('a5');
   var b = roda('b5');
   var c = roda('c5');
 
-  server.use('conflict', function(ctx, next){
+  function conflict(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
     next();
-  });
+  }
+  server.use('conflict', conflict);
+  server2.use('conflict', conflict);
 
   var result;
   function read(arr){
@@ -728,12 +731,17 @@ test('Replication merge conflict', function(t){
     c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
+  });
+  server.liveStream().debounce(500).pull(function(){
     server.readStream().toArray(read);
   });
-  a.liveStream().debounce(500).each(function(){
+  server2.liveStream().debounce(500).pull(function(){
+    server2.readStream().toArray(read);
+  });
+  a.liveStream().debounce(500).pull(function(){
     a.readStream().toArray(read);
   });
-  b.liveStream().debounce(500).each(function(){
+  b.liveStream().debounce(500).pull(function(){
     b.readStream().toArray(read);
   });
 
@@ -747,6 +755,8 @@ test('Replication merge conflict', function(t){
   });
   tx.commit(function(){
     sync(b, server);
-    sync(a, server);
+    sync(a, server2);
+    pipe(server, server2);
+    pipe(server2, server);
   });
 });
