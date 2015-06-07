@@ -536,11 +536,11 @@ test('Replication merge', function(t){
     return setInterval(function(){
       //reconnecting replication
       server.clockStream()
-        .pipe(client.changesStream({ live: true }))
+        .pipe(client.changesStream())
         .take(5)
         .pipe(server.replicateStream({ merge: true }));
       client.clockStream()
-        .pipe(server.changesStream({ live: true }))
+        .pipe(server.changesStream())
         .take(5)
         .pipe(client.replicateStream());
     }, 200);
