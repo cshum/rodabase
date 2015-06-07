@@ -751,14 +751,14 @@ test('Replication merge conflict resolution', function(t){
       t.equal(arr.length, n, 'server n conflicts');
     });
   });
-  server.liveStream().debounce(1000).pull(function(){
+  server.liveStream().debounce(2000).pull(function(){
     server.readStream().toArray(read);
   });
-  server2.liveStream().debounce(1000).pull(function(){
+  server2.liveStream().debounce(2000).pull(function(){
     server2.readStream().toArray(read);
   });
   var from;
-  a.liveStream().debounce(1000).pull(function(){
+  a.liveStream().debounce(2000).pull(function(){
     a.readStream().toArray(read);
     a.liveStream().drop(2).pull(function(){
       a.get('a',function(err, val){
@@ -767,7 +767,7 @@ test('Replication merge conflict resolution', function(t){
     });
     a.put('a',{a:'a'});
   });
-  b.liveStream().debounce(1000).pull(function(){
+  b.liveStream().debounce(2000).pull(function(){
     b.readStream().toArray(read);
     b.liveStream().pull(function(err, data){
       from = data._rev;
