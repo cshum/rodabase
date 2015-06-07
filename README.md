@@ -7,6 +7,7 @@ Transactional, replicable document store for Node.js and browsers. Built on [Lev
 * Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB or WebSQL on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
+[![Coverage Status](https://coveralls.io/repos/cshum/rodabase/badge.svg)](https://coveralls.io/r/cshum/rodabase)
 
 ```bash
 $ npm install rodabase leveldown@0.10.5
