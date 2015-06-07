@@ -531,6 +531,20 @@ test('Replication', function(t){
 
 test('Replication merge', function(t){
   t.plan(5);
+  var syncA, syncB, syncC;
+  function sync(client, server){
+    return setInterval(function(){
+      //reconnecting replication
+      server.clockStream()
+        .pipe(client.changesStream({ live: true }))
+        .take(5)
+        .pipe(server.replicateStream({ merge: true }));
+      client.clockStream()
+        .pipe(server.changesStream({ live: true }))
+        .take(5)
+        .pipe(client.replicateStream());
+    }, 200);
+  }
 
   var server = roda('server');
   var server2 = roda('server2');
@@ -575,24 +589,27 @@ test('Replication merge', function(t){
   a.liveStream().drop(n*2 + n - 1).pull(function(){
     a.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'a equals server result');
+      clearInterval(syncA);
     });
   });
   b.liveStream().drop(n*2 + n - 1).pull(function(){
     b.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'b equals server result');
+      clearInterval(syncB);
     });
   });
   c.liveStream().drop(n*2 - 1).pull(function(){
     c.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'c equals server result');
+      clearInterval(syncC);
     });
   });
 
   pipe(server, server2);
   pipe(server2, server);
-  sync(a, server);
-  sync(b, server2);
-  sync(c, server2);
+  syncA = sync(a, server);
+  syncB = sync(b, server2);
+  syncC = sync(c, server2);
 });
 
 test('Replication gets-from ordering', function(t){
