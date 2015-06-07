@@ -595,7 +595,7 @@ test('Replication merge', function(t){
   sync(c, server2);
 });
 
-test('Replication casual ordering', function(t){
+test('Replication gets-from ordering', function(t){
   t.plan(6);
 
   function pipe(source, dest, delay){
@@ -655,7 +655,7 @@ test('Replication casual ordering', function(t){
 
 });
 
-test('Replication conflict', function(t){
+test('Replication conflict resolution', function(t){
   t.plan(3);
 
   var a = roda('a4');
@@ -701,8 +701,8 @@ test('Replication conflict', function(t){
   });
 });
 
-test('Replication merge conflict', function(t){
-  t.plan(5);
+test('Replication merge conflict resolution', function(t){
+  t.plan(6);
 
   var server = roda('serverC');
   var server2 = roda('serverC2');
@@ -713,6 +713,8 @@ test('Replication merge conflict', function(t){
   function conflict(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
+    if(ctx.conflict._id === 'a')
+      t.error('a should not conflict');
     next();
   }
   server.use('conflict', conflict);
@@ -732,17 +734,28 @@ test('Replication merge conflict', function(t){
       t.equal(arr.length, n, 'server n conflicts');
     });
   });
-  server.liveStream().debounce(500).pull(function(){
+  server.liveStream().debounce(1000).pull(function(){
     server.readStream().toArray(read);
   });
-  server2.liveStream().debounce(500).pull(function(){
+  server2.liveStream().debounce(1000).pull(function(){
     server2.readStream().toArray(read);
   });
-  a.liveStream().debounce(500).pull(function(){
+  var from;
+  a.liveStream().debounce(1000).pull(function(){
     a.readStream().toArray(read);
+    a.liveStream().drop(2).pull(function(){
+      a.get('a',function(err, val){
+        t.equal(val._from, from, 'non-conflict merged gets from');
+      });
+    });
+    a.put('a',{a:'a'});
   });
-  b.liveStream().debounce(500).pull(function(){
+  b.liveStream().debounce(1000).pull(function(){
     b.readStream().toArray(read);
+    b.liveStream().pull(function(err, data){
+      from = data._rev;
+      b.put('a',{a:'b'});
+    });
   });
 
   var tx = roda.transaction();
