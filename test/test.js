@@ -737,7 +737,7 @@ test('Replication merge conflict resolution', function(t){
   server.use('conflict', conflict);
   server2.use('conflict', conflict);
 
-  var result;
+  var result, from;
   function read(arr){
     if(result){
       t.deepEqual(arr, result, 'result consistent');
@@ -746,26 +746,29 @@ test('Replication merge conflict resolution', function(t){
       t.equal(arr.length, n, 'n results');
     }
   }
-  var from;
+  //exactly n conflicts between server and server2
   c.liveStream().drop(n - 1).pull(function(err, doc){
     c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
     setTimeout(function(){
+      //read consistencies
       server.readStream().toArray(read);
       server2.readStream().toArray(read);
       a.readStream().toArray(read);
+      b.readStream().toArray(read);
+
+      //get from, should not conflict
+      b.liveStream().pull(function(err, data){
+        from = data._rev;
+        b.put('a',{a:'b'});
+      });
       a.liveStream().drop(2).pull(function(){
         a.get('a',function(err, val){
           t.equal(val._from, from, 'non-conflict merged gets from');
         });
       });
       a.put('a',{a:'a'});
-      b.readStream().toArray(read);
-      b.liveStream().pull(function(err, data){
-        from = data._rev;
-        b.put('a',{a:'b'});
-      });
     }, 1000);
 
   });
