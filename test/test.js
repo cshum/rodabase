@@ -746,10 +746,28 @@ test('Replication merge conflict resolution', function(t){
       t.equal(arr.length, n, 'n results');
     }
   }
+  var from;
   c.liveStream().drop(n - 1).pull(function(err, doc){
     c.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
+    setTimeout(function(){
+      server.readStream().toArray(read);
+      server2.readStream().toArray(read);
+      a.readStream().toArray(read);
+      a.liveStream().drop(2).pull(function(){
+        a.get('a',function(err, val){
+          t.equal(val._from, from, 'non-conflict merged gets from');
+        });
+      });
+      a.put('a',{a:'a'});
+      b.readStream().toArray(read);
+      b.liveStream().pull(function(err, data){
+        from = data._rev;
+        b.put('a',{a:'b'});
+      });
+    }, 1000);
+
   });
 
   var tx = roda.transaction();
@@ -761,30 +779,6 @@ test('Replication merge conflict resolution', function(t){
     b.put(i, {b:i}, tx);
   });
   tx.commit(function(){
-    var from;
-    server.liveStream().debounce(2000).pull(function(){
-      server.readStream().toArray(read);
-    });
-    server2.liveStream().debounce(2000).pull(function(){
-      server2.readStream().toArray(read);
-    });
-    a.liveStream().debounce(2000).pull(function(){
-      a.readStream().toArray(read);
-      a.liveStream().drop(2).pull(function(){
-        a.get('a',function(err, val){
-          t.equal(val._from, from, 'non-conflict merged gets from');
-        });
-      });
-      a.put('a',{a:'a'});
-    });
-    b.liveStream().debounce(2000).pull(function(){
-      b.readStream().toArray(read);
-      b.liveStream().pull(function(err, data){
-        from = data._rev;
-        b.put('a',{a:'b'});
-      });
-    });
-
     sync(b, server);
     sync(a, server2);
     pipe(server, server2);
