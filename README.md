@@ -39,9 +39,10 @@ All operations are asynchronous although they don't necessarily require a callba
   - [.put(id, doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
-  - [.mapper(name, fn)](#mappername-fn)
   - [.readStream([options])](#readstreamoptions)
   - [.liveStream()](#livestream)
+- [Index Mapper](#index-mapper)
+  - [.index(name, mapper)](#indexname-mapper)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
@@ -50,10 +51,8 @@ All operations are asynchronous although they don't necessarily require a callba
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
-  - [.pipe(roda)](#piperoda)
 - [Conflict Resolution](#conflict-resolution)
   - [.use('conflict', [hook...])](#useconflict-hook)
-  - [.resolver(fn)](#resolverfn)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -111,23 +110,6 @@ Removes data from Rodabase.
 * `id`: Primary key under the namespace. Must be a string.
 * `tx`: Optional transaction object. See [Transaction](#transaction) section.
 
-####.mapper(name, fn)
-#####emit(key, [doc], [unique])
-
-```js
-var users = roda('users');
-
-users.mapper('email', function(doc, emit){
-  emit(doc.email, true); //unique
-});
-users.mapper('age', function(doc, emit){
-  emit(doc.age); //can be non-unique
-});
-
-users.readStream({ map: 'age', gt: 15 }).pipe(process.stdout); //users over age 15
-users.readStream({ map: 'email', eq: 'adrian@cshum.com' }).toArray(log); //user of email 'adrian@cshum.com'
-
-```
 ####.readStream([options])
 * `index`
 * `options`
@@ -140,6 +122,25 @@ users.readStream({ map: 'email', eq: 'adrian@cshum.com' }).toArray(log); //user 
 
 ####.liveStream()
 
+###Index Mapper
+####.index(name, mapper)
+#####Secondary index
+
+```js
+var users = roda('users');
+
+users.index('email', function(doc, emit){
+  emit(doc.email, true); //unique
+});
+users.index('age', function(doc, emit){
+  emit(doc.age); //can be non-unique
+});
+
+users.readStream({ index: 'age', gt: 15 }); //Stream users over age 15
+users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
+```
+#####Mapping & filtering
+#####Prefixing
 ###Transaction
 
 What Rodabase means in context of ACID:
@@ -303,4 +304,3 @@ client.clockStream()
 ###Conflict Resolution
 
 ####.use('conflict', [hook...])
-####.resolver(fn)
