@@ -573,10 +573,10 @@ test('Replication merge', function(t){
   var result;
   function read(arr){
     if(result){
-      t.deepEqual(arr, result, 'server equals server2 result');
+      t.deepEqual(arr, result, 'result consistent');
     }else{
       result = arr;
-      t.equal(arr.length, n*2, 'server syncs from a b');
+      t.equal(arr.length, n*2, 'result n*2 length');
     }
   }
 
@@ -588,19 +588,19 @@ test('Replication merge', function(t){
   });
   a.liveStream().drop(n*2 + n - 1).pull(function(){
     a.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'a equals server result');
+      t.deepEqual(arr, result, 'a result consistent');
       clearInterval(syncA);
     });
   });
   b.liveStream().drop(n*2 + n - 1).pull(function(){
     b.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'b equals server result');
+      t.deepEqual(arr, result, 'b result consistent');
       clearInterval(syncB);
     });
   });
   c.liveStream().drop(n*2 - 1).pull(function(){
     c.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'c equals server result');
+      t.deepEqual(arr, result, 'c result consistent');
       clearInterval(syncC);
     });
   });
@@ -694,7 +694,7 @@ test('Replication conflict resolution', function(t){
     var result;
     function read(arr){
       if(result){
-        t.deepEqual(result, arr, 'a equals b result');
+        t.deepEqual(result, arr, 'result consistent');
       }else{
         result = arr;
         t.equal(arr.length, n, 'n results');
