@@ -339,7 +339,7 @@ test('Live changesStream', function(t){
 
 
 test('Index mapper and range', function(t){
-  t.plan(19 + n);
+  t.plan(20);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -376,10 +376,9 @@ test('Index mapper and range', function(t){
     tx.commit(function(err){
       t.notOk(err, 'commit success');
 
-      for(var i = 0; i < n; i++)
-        roda('users').post({ email: 'adrian@cshum.com' }, function(err, val){
-          t.ok(err.exists, 'Repeated');
-        });
+      roda('users').post({ email: 'adrian@cshum.com' }, function(err, val){
+        t.ok(err.exists, 'Repeated');
+      });
 
       users.readStream({ index:'email' })
         .pluck('email').toArray(function(list){
