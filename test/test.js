@@ -128,8 +128,8 @@ test('Transaction: sequential operations', function(t){
       api.readStream().toArray(function(list){
         list = _.sortBy(list, 'i');
         t.equal(list.length, n, 'list filled after commit');
-        t.deepEqual(_.sortBy(list, '_id'), list, '_id incremental');
-        t.deepEqual(_.sortBy(list, '_rev'), list, '_rev incremental');
+        t.deepEqual(_.sortBy(_.shuffle(list), '_id'), list, '_id incremental');
+        t.deepEqual(_.sortBy(_.shuffle(list), '_rev'), list, '_rev incremental');
       });
     });
   });
@@ -265,27 +265,27 @@ test('Transaction middleware: diff', function(t){
     roda('6').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('6').changesStream({clocks:[]}).toArray(function(changes){
-      t.equal(changes.length, n, 'changes n length');
+    roda('6').timeStream().toArray(function(list){
+      t.equal(list.length, n, 'time n length');
     });
     roda('6.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.1').changesStream({clocks:[]}).toArray(function(list){
-      t.equal(list.length, n, 'hook changes n length');
+    roda('6.1').timeStream().toArray(function(list){
+      t.equal(list.length, n, 'hook time n length');
     });
     roda('6.2').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.2').changesStream({clocks:[]}).toArray(function(list){
-      t.equal(list.length, n, 'hook changes n length');
+    roda('6.2').timeStream().toArray(function(list){
+      t.equal(list.length, n, 'hook time n length');
     });
   });
 
 });
 
-test('changesStream', function(t){
-  t.plan(3);
+test('timeStream', function(t){
+  t.plan(4);
   var api = roda('4');
   var tx = roda.transaction();
   var i;
@@ -306,13 +306,14 @@ test('changesStream', function(t){
     api.readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    api.changesStream({clocks:[]}).toArray(function(changes){
-      t.equal(changes.length, n, 'changes n ength');
+    api.timeStream().toArray(function(list){
+      t.equal(list.length, n, 'timeStream n length');
+      t.deepEqual(_.sortBy(_.shuffle(list), '_time'), list, '_time incremental');
     });
   });
 });
 
-test('Live changesStream', function(t){
+test('liveStream timeStream', function(t){
   t.plan(2);
   var api = roda('4');
   var m = 17;
@@ -320,15 +321,13 @@ test('Live changesStream', function(t){
   api.liveStream()
     .drop(m - 1)
     .pull(function(err, data){
-      if(data.m === m - 1)
-        t.equal(data.m, m - 1, 'liveStream tail');
+      t.equal(data.m, m - 1, 'liveStream tail');
     });
 
-  api.changesStream({ clocks: [], live: true })
+  api.timeStream({ live: true })
     .drop(n + m - 1)
     .pull(function(err, data){
-      if(data.m === m - 1)
-        t.equal(data.m, m - 1, 'liveChanges tail');
+      t.equal(data.m, m - 1, 'live timeStream tail');
     });
 
   var tx = roda.transaction();
