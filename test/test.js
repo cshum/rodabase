@@ -376,7 +376,7 @@ test('Index mapper and range', function(t){
     tx.commit(function(err){
       t.notOk(err, 'commit success');
 
-      roda('users').post({ email: 'adrian@cshum.com' }, function(err, val){
+      users.post({ email: 'adrian@cshum.com' }, function(err, val){
         t.ok(err.exists, 'Repeated');
       });
 
