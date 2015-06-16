@@ -2,6 +2,7 @@ node_modules
 .DS_Store
 *.swp
 npm-debug.log
+coverage
 test/data
 test/db
 test.js
