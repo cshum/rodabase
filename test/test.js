@@ -318,13 +318,13 @@ test('timeStream and trigger', function(t){
       api.trigger('linear', function(doc, next){
         linear.push(doc);
         if(linear.length === n)
-          return t.deepEqual(linear, list, 'linear trigger incremental');
+          t.deepEqual(linear, list, 'linear trigger incremental');
         setTimeout(next, Math.random() * 10);
       })
       .trigger('parallel', function(doc, next){
         parallel.push(doc);
         if(parallel.length === n)
-          return t.deepEqual(parallel, list, 'parallel trigger incremental');
+          t.deepEqual(parallel, list, 'parallel trigger incremental');
         setTimeout(next, Math.random() * 10);
       }, { parallel: 7 })
       .trigger('retry', function(doc, next){
@@ -335,7 +335,7 @@ test('timeStream and trigger', function(t){
           retry.push(doc);
           count = 0;
           if(retry.length === n)
-            return t.deepEqual(retry, list, 'retry trigger incremental');
+            t.deepEqual(retry, list, 'retry trigger incremental');
           next();
         }
       }, { retryDelay: 1 });
@@ -343,8 +343,8 @@ test('timeStream and trigger', function(t){
   });
 });
 
-test('liveStream timeStream', function(t){
-  t.plan(2);
+test('liveStream timeStream trigger', function(t){
+  t.plan(3);
   var api = roda('4');
   var m = 17;
 
@@ -359,6 +359,20 @@ test('liveStream timeStream', function(t){
     .pull(function(err, data){
       t.equal(data.m, m - 1, 'live timeStream tail');
     });
+
+  //destroy trigger instance to test durability
+  api._triggered.linear.destroy();
+  delete api._triggered.linear;
+
+  api.liveStream().take(m).pluck('_rev').collect().pull(function(err, list){
+    var linear = [];
+    api.trigger('linear', function(doc, next){
+      linear.push(doc._rev);
+      if(linear.length === m)
+        return t.deepEqual(linear, list, 'durable trigger');
+      next();
+    });
+  });
 
   var tx = roda.transaction();
   for(i = 0; i < m; i++)
