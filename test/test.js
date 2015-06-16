@@ -361,8 +361,8 @@ test('liveStream timeStream trigger', function(t){
     });
 
   //destroy trigger instance to test durability
-  api._triggered.linear.destroy();
-  delete api._triggered.linear;
+  api._triggers.linear.destroy();
+  delete api._triggers.linear;
 
   api.liveStream().take(m).pluck('_rev').collect().pull(function(err, list){
     var linear = [];
