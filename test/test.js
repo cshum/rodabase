@@ -573,89 +573,6 @@ test('Replication', function(t){
 
 });
 
-test('Replication merge', function(t){
-  t.plan(5);
-  var syncA, syncB, syncC;
-  function sync(client, server){
-    return setInterval(function(){
-      //reconnecting replication
-      server.clockStream()
-        .pipe(client.changesStream())
-        .take(5)
-        .pipe(server.replicateStream({ merge: true }));
-      client.clockStream()
-        .pipe(server.changesStream())
-        .take(5)
-        .pipe(client.replicateStream());
-    }, 200);
-  }
-
-  var server = roda('server');
-  var server2 = roda('server2');
-  var a = roda('a2');
-  var b = roda('b2');
-  var c = roda('c2');
-
-  function conflict(ctx, next){
-    t.error({
-      conflict: ctx.conflict,
-      result: ctx.result
-    },'should not conflict');
-    next();
-  }
-  server.use('conflict', conflict);
-  server2.use('conflict', conflict);
-  a.use('conflict', conflict);
-  b.use('conflict', conflict);
-  c.use('conflict', conflict);
-
-  for(var i = 0; i < n; i++){
-    a.post({ a: i });
-    b.post({ b: i });
-  }
-
-  var result;
-  function read(arr){
-    if(result){
-      t.deepEqual(arr, result, 'result consistent');
-    }else{
-      result = arr;
-      t.equal(arr.length, n*2, 'result n*2 length');
-    }
-  }
-
-  server.liveStream().drop(n*2 - 1).pull(function(){
-    server.readStream().toArray(read);
-  });
-  server2.liveStream().drop(n*2 - 1).pull(function(){
-    server2.readStream().toArray(read);
-  });
-  a.liveStream().drop(n*2 + n - 1).pull(function(){
-    a.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'a result consistent');
-      clearInterval(syncA);
-    });
-  });
-  b.liveStream().drop(n*2 + n - 1).pull(function(){
-    b.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'b result consistent');
-      clearInterval(syncB);
-    });
-  });
-  c.liveStream().drop(n*2 - 1).pull(function(){
-    c.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'c result consistent');
-      clearInterval(syncC);
-    });
-  });
-
-  pipe(server, server2);
-  pipe(server2, server);
-  syncA = sync(a, server);
-  syncB = sync(b, server2);
-  syncC = sync(c, server2);
-});
-
 test('Replication gets-from ordering', function(t){
   t.plan(6);
 
@@ -831,4 +748,87 @@ test('Replication merge conflict resolution', function(t){
     pipe(server, server2);
     pipe(server2, server);
   });
+});
+
+test('Replication reconnected merge', function(t){
+  t.plan(5);
+  var syncA, syncB, syncC;
+  function sync(client, server){
+    return setInterval(function(){
+      //reconnecting replication
+      server.clockStream()
+        .pipe(client.changesStream())
+        .take(5)
+        .pipe(server.replicateStream({ merge: true }));
+      client.clockStream()
+        .pipe(server.changesStream())
+        .take(5)
+        .pipe(client.replicateStream());
+    }, 200);
+  }
+
+  var server = roda('server');
+  var server2 = roda('server2');
+  var a = roda('a2');
+  var b = roda('b2');
+  var c = roda('c2');
+
+  function conflict(ctx, next){
+    t.error({
+      conflict: ctx.conflict,
+      result: ctx.result
+    },'should not conflict');
+    next();
+  }
+  server.use('conflict', conflict);
+  server2.use('conflict', conflict);
+  a.use('conflict', conflict);
+  b.use('conflict', conflict);
+  c.use('conflict', conflict);
+
+  for(var i = 0; i < n; i++){
+    a.post({ a: i });
+    b.post({ b: i });
+  }
+
+  var result;
+  function read(arr){
+    if(result){
+      t.deepEqual(arr, result, 'result consistent');
+    }else{
+      result = arr;
+      t.equal(arr.length, n*2, 'result n*2 length');
+    }
+  }
+
+  server.liveStream().drop(n*2 - 1).pull(function(){
+    server.readStream().toArray(read);
+  });
+  server2.liveStream().drop(n*2 - 1).pull(function(){
+    server2.readStream().toArray(read);
+  });
+  a.liveStream().drop(n*2 + n - 1).pull(function(){
+    a.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'a result consistent');
+      clearInterval(syncA);
+    });
+  });
+  b.liveStream().drop(n*2 + n - 1).pull(function(){
+    b.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'b result consistent');
+      clearInterval(syncB);
+    });
+  });
+  c.liveStream().drop(n*2 - 1).pull(function(){
+    c.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'c result consistent');
+      clearInterval(syncC);
+    });
+  });
+
+  pipe(server, server2);
+  pipe(server2, server);
+  syncA = sync(a, server);
+  syncB = sync(b, server2);
+  syncC = sync(c, server2);
 });
