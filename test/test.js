@@ -284,8 +284,8 @@ test('Transaction middleware: diff', function(t){
 
 });
 
-test('timeStream', function(t){
-  t.plan(4);
+test('timeStream and trigger', function(t){
+  t.plan(7);
   var api = roda('4');
   var tx = roda.transaction();
   var i;
@@ -309,6 +309,36 @@ test('timeStream', function(t){
     api.timeStream().toArray(function(list){
       t.equal(list.length, n, 'timeStream n length');
       t.deepEqual(_.sortBy(_.shuffle(list), '_time'), list, '_time incremental');
+
+      var linear = [];
+      var parallel = [];
+      var retry = [];
+      var count = 0;
+      
+      api.trigger('linear', function(doc, next){
+        linear.push(doc);
+        if(linear.length === n)
+          return t.deepEqual(linear, list, 'linear trigger incremental');
+        setTimeout(next, Math.random() * 10);
+      })
+      .trigger('parallel', function(doc, next){
+        parallel.push(doc);
+        if(parallel.length === n)
+          return t.deepEqual(parallel, list, 'parallel trigger incremental');
+        setTimeout(next, Math.random() * 10);
+      }, { parallel: 7 })
+      .trigger('retry', function(doc, next){
+        if(count < Math.random() * 5){
+          count++;
+          next(new Error());
+        }else{
+          retry.push(doc);
+          count = 0;
+          if(retry.length === n)
+            return t.deepEqual(retry, list, 'retry trigger incremental');
+          next();
+        }
+      }, { retryDelay: 1 });
     });
   });
 });
