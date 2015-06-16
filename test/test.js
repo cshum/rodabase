@@ -1,14 +1,15 @@
+if(process.browser){
+  require("indexeddbshim");
+  var idb = window.indexedDB || window.mozIndexedDB || 
+    window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
+  idb.deleteDatabase('IDBWrapper-./test/db');
+}
+
 var rodabase = require('../');
 
 var test = require('tape');
 var _ = require('underscore');
 var H = require('highland');
-
-if(process.browser){
-  var idb = window.indexedDB || window.mozIndexedDB || 
-    window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
-  idb.deleteDatabase('IDBWrapper-./test/db');
-}
 
 var n = 50;
 // var n = 100;
