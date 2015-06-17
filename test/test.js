@@ -14,6 +14,7 @@ var H = require('highland');
 var n = 50;
 // var n = 100;
 var roda = rodabase('./test/db', {
+  ttl: n * 1000
   // db: require('jsondown')
 });
 var util = roda.util;
@@ -611,10 +612,12 @@ test('Replication gets-from ordering', function(t){
     b.liveStream().pull(function(err, data){
       data.i = 1;
       b.put('a1', data);
+      a.put('b1', data); //redundant put
     });
     a.liveStream().drop(1).pull(function(err, data){
       data.i = 1;
       a.put('b1', data);
+      a.put('b1', data); //redundant put
     });
     setTimeout(function(){
       pipe(a, c);
@@ -691,8 +694,10 @@ test('Replication merge conflict resolution', function(t){
   function conflict(ctx, next){
     //conflicted document post into c
     c.post(ctx.conflict, ctx.transaction);
-    if(ctx.conflict._id === 'a')
+    if(ctx.conflict._id === 'a'){
       t.error('a should not conflict');
+      console.log(ctx.conflict, ctx.result);
+    }
     next();
   }
   server.use('conflict', conflict);
@@ -722,9 +727,12 @@ test('Replication merge conflict resolution', function(t){
       //get from, should not conflict
       b.liveStream().pull(function(err, data){
         from = data._rev;
-        b.put('a',{a:'b'});
+        var tx = roda.transaction();
+        b.put('a',{a:'b'}, tx);
+        b.put('a',{foo:'bar'}, tx);
+        tx.commit();
       });
-      a.liveStream().drop(2).pull(function(){
+      a.liveStream().drop(3).pull(function(){
         a.get('a',function(err, val){
           t.equal(val._from, from, 'non-conflict merged gets from');
         });
@@ -758,13 +766,13 @@ test('Replication reconnected merge', function(t){
       //reconnecting replication
       server.clockStream()
         .pipe(client.changesStream())
-        .take(5)
+        .take(n/2)
         .pipe(server.replicateStream({ merge: true }));
       client.clockStream()
         .pipe(server.changesStream())
-        .take(5)
+        .take(n/2)
         .pipe(client.replicateStream());
-    }, 200);
+    }, 500);
   }
 
   var server = roda('server');
