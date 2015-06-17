@@ -729,10 +729,11 @@ test('Replication merge conflict resolution', function(t){
         from = data._rev;
         var tx = roda.transaction();
         b.put('a',{a:'b'}, tx);
+        b.del('a', tx);
         b.put('a',{foo:'bar'}, tx);
         tx.commit();
       });
-      a.liveStream().drop(3).pull(function(){
+      a.liveStream().drop(4).pull(function(){
         a.get('a',function(err, val){
           t.equal(val._from, from, 'non-conflict merged gets from');
         });
