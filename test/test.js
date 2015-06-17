@@ -683,7 +683,6 @@ test('Replication conflict detection', function(t){
 
       //get from, should not conflict
       var tx = roda.transaction();
-      a.del('foo', tx); //non exists del
       a.put('foo',{a:'a'}, tx);
       tx.commit();
       b.liveStream().pull(function(err, data){
@@ -696,18 +695,18 @@ test('Replication conflict detection', function(t){
           c.get('foo', function(err, data){
             t.equal(
               data._from, bFrom, 
-              'non-conflict merged B gets from A'
+              'B gets from A no conflict'
             );
             var cFrom = data._rev;
             var tx = roda.transaction();
-            c.del('foo', tx); //local op
+            c.put('foo', {bar: 'whatever'}, tx); //local op
             c.put('foo', {c:'c'}, tx);
             tx.commit();
             setTimeout(function(){
               a.get('foo', function(err, data){
                 t.equal(
                   data._from, cFrom, 
-                  'non-conflict merged C gets from B'
+                  'C gets from B no conflict'
                 );
               });
             }, 200);
