@@ -520,7 +520,7 @@ test('Index mapper and range', function(t){
 function sync(client, server){
   server.clockStream()
     .pipe(client.changesStream({ live: true }))
-    .pipe(server.replicateStream({ merge: true }));
+    .pipe(server.replicateStream());
   client.clockStream()
     .pipe(server.changesStream({ live: true }))
     .pipe(client.replicateStream());
@@ -637,53 +637,7 @@ test('Replication gets-from ordering', function(t){
 
 });
 
-test('Replication conflict resolution', function(t){
-  t.plan(3);
-
-  var a = roda('a4');
-  var b = roda('b4');
-  var c = roda('c4');
-
-  function conflict(ctx, next){
-    //conflicted document post into c
-    c.post(ctx.conflict, ctx.transaction);
-    next();
-  }
-  a.use('conflict', conflict);
-  b.use('conflict', conflict);
-
-  c.liveStream().drop(n - 1).pull(function(err, doc){
-    c.readStream().toArray(function(arr){
-      t.equal(arr.length, n, 'n conflicts');
-    });
-    var result;
-    function read(arr){
-      if(result){
-        t.deepEqual(result, arr, 'result consistent');
-      }else{
-        result = arr;
-        t.equal(arr.length, n, 'n results');
-      }
-    }
-    a.readStream().toArray(read);
-    b.readStream().toArray(read);
-  });
-
-  var tx = roda.transaction();
-  //docs in a b will randomly conflict
-  _.shuffle(_.range(n)).forEach(function(i){
-    a.put(i, {a:i}, tx);
-  });
-  _.shuffle(_.range(n)).forEach(function(i){
-    b.put(i, {b:i}, tx);
-  });
-  tx.commit(function(){
-    pipe(b, a);
-    pipe(a, b);
-  });
-});
-
-test('Replication merge conflict resolution', function(t){
+test('Replication conflict detection', function(t){
   t.plan(8);
 
   var server = roda('serverC');
@@ -733,7 +687,6 @@ test('Replication merge conflict resolution', function(t){
       a.put('foo',{a:'a'}, tx);
       tx.commit();
       b.liveStream().pull(function(err, data){
-        console.log(data);
         var bFrom = data._rev;
         var tx = roda.transaction();
         b.del('foo', tx); //local op
@@ -741,7 +694,6 @@ test('Replication merge conflict resolution', function(t){
         tx.commit();
         setTimeout(function(){
           c.get('foo', function(err, data){
-            console.log(data);
             t.equal(
               data._from, bFrom, 
               'non-conflict merged B gets from A'
@@ -753,10 +705,9 @@ test('Replication merge conflict resolution', function(t){
             tx.commit();
             setTimeout(function(){
               a.get('foo', function(err, data){
-                console.log(data);
                 t.equal(
                   data._from, cFrom, 
-                  'non-conflict merged C gets from A'
+                  'non-conflict merged C gets from B'
                 );
               });
             }, 200);
@@ -780,90 +731,6 @@ test('Replication merge conflict resolution', function(t){
     sync(b, server);
     sync(a, server2);
     sync(c, server);
-    pipe(server, server2);
-    pipe(server2, server);
+    sync(server, server2);
   });
-});
-
-test('Replication reconnected merge', function(t){
-  t.plan(5);
-  var syncA, syncB, syncC;
-  function sync(client, server){
-    return setInterval(function(){
-      //reconnecting replication
-      server.clockStream()
-        .pipe(client.changesStream())
-        .take(n/2)
-        .pipe(server.replicateStream({ merge: true }));
-      client.clockStream()
-        .pipe(server.changesStream())
-        .take(n/2)
-        .pipe(client.replicateStream());
-    }, 500);
-  }
-
-  var server = roda('server');
-  var server2 = roda('server2');
-  var a = roda('a2');
-  var b = roda('b2');
-  var c = roda('c2');
-
-  function conflict(ctx, next){
-    t.error({
-      conflict: ctx.conflict,
-      result: ctx.result
-    },'should not conflict');
-    next();
-  }
-  server.use('conflict', conflict);
-  server2.use('conflict', conflict);
-  a.use('conflict', conflict);
-  b.use('conflict', conflict);
-  c.use('conflict', conflict);
-
-  for(var i = 0; i < n; i++){
-    a.post({ a: i });
-    b.post({ b: i });
-  }
-
-  var result;
-  function read(arr){
-    if(result){
-      t.deepEqual(arr, result, 'result consistent');
-    }else{
-      result = arr;
-      t.equal(arr.length, n*2, 'result n*2 length');
-    }
-  }
-
-  server.liveStream().drop(n*2 - 1).pull(function(){
-    server.readStream().toArray(read);
-  });
-  server2.liveStream().drop(n*2 - 1).pull(function(){
-    server2.readStream().toArray(read);
-  });
-  a.liveStream().drop(n*2 + n - 1).pull(function(){
-    a.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'a result consistent');
-      clearInterval(syncA);
-    });
-  });
-  b.liveStream().drop(n*2 + n - 1).pull(function(){
-    b.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'b result consistent');
-      clearInterval(syncB);
-    });
-  });
-  c.liveStream().drop(n*2 - 1).pull(function(){
-    c.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'c result consistent');
-      clearInterval(syncC);
-    });
-  });
-
-  pipe(server, server2);
-  pipe(server2, server);
-  syncA = sync(a, server);
-  syncB = sync(b, server2);
-  syncC = sync(c, server2);
 });
