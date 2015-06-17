@@ -164,7 +164,7 @@ test('Transaction: isolation', function(t){
 
 test('CRUD', function(t){
   var api = roda('crud');
-  t.plan(8);
+  t.plan(10);
 
   api.post({'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'create');
@@ -191,6 +191,10 @@ test('CRUD', function(t){
     api.get('bla', function(err, val){
       t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
+    });
+    api.get('bla', true, function(err, val){
+      t.notOk(err, 'no err.notFound with deleted option');
+      t.ok(val._deleted, 'val deleted');
     });
   });
 
