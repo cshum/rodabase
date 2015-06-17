@@ -684,7 +684,7 @@ test('Replication conflict resolution', function(t){
 });
 
 test('Replication merge conflict resolution', function(t){
-  t.plan(6);
+  t.plan(7);
 
   var server = roda('serverC');
   var server2 = roda('serverC2');
@@ -704,7 +704,7 @@ test('Replication merge conflict resolution', function(t){
   server.use('conflict', conflict);
   server2.use('conflict', conflict);
 
-  var result, from;
+  var result, fromA, fromB;
   function read(arr){
     if(result){
       t.deepEqual(arr, result, 'result consistent');
@@ -727,7 +727,7 @@ test('Replication merge conflict resolution', function(t){
 
       //get from, should not conflict
       b.liveStream().pull(function(err, data){
-        from = data._rev;
+        fromB = data._rev;
         var tx = roda.transaction();
         b.put('a',{a:'b'}, tx);
         b.del('a', tx);
@@ -735,8 +735,16 @@ test('Replication merge conflict resolution', function(t){
         tx.commit();
       });
       a.liveStream().drop(4).pull(function(){
-        a.get('a',function(err, val){
-          t.equal(val._from, from, 'non-conflict merged gets from');
+        a.get('a',function(err, data){
+          t.equal(data._from, fromB, 'non-conflict merged gets from B');
+          a.put('a', {a:'aaaa'}, function(err, data){
+            fromA = data._rev;
+            console.log(data);
+            b.liveStream().pull(function(err, data){
+              console.log(data);
+              t.equal(data._from, fromA, 'non-conflict merged gets from A');
+            });
+          });
         });
       });
       a.put('a',{a:'a'});
