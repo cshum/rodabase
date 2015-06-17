@@ -228,13 +228,9 @@ test('Transaction middleware: Validate', function(t){
 });
 
 test('Transaction middleware: diff', function(t){
-  t.plan(7);
+  t.plan(8);
   roda('6').use('diff', function(ctx, next){
     if(!ctx.result._deleted){
-      roda('6.1').put(ctx.result._id, {
-        i: ctx.result.i * 10
-      }, ctx.transaction);
-      //redundant
       roda('6.1').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
@@ -255,13 +251,14 @@ test('Transaction middleware: diff', function(t){
 
   for(i = 0; i < n; i++)
     roda('6').put(util.encodeNumber(i), { i: i }, tx);
-  for(i = 0; i < n; i++)
-    roda('6').put(util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
     roda('6').del(util.encodeNumber(i), tx);
-  for(i = 0; i < n; i+=3)
-    roda('6').del(util.encodeNumber(i), tx); //non-exist del
+
+  roda('6').del(util.encodeNumber(0), tx, function(err){
+    t.ok(err.notFound, 'notFound error for non-exists del');
+  });
+
   for(i = 0; i < n; i+=2)
     roda('6.1').del(util.encodeNumber(i), tx);
 
