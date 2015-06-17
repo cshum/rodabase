@@ -738,24 +738,26 @@ test('Replication merge conflict resolution', function(t){
         var tx = roda.transaction();
         b.del('foo', tx); //local op
         b.put('foo',{b:'b'}, tx);
-        tx.commit();
-        c.liveStream().drop(1).pull(function(err, data){
-          console.log(data);
-          t.equal(
-            data._from, bFrom, 
-            'non-conflict merged B gets from'
-          );
-          var cFrom = data._rev;
-          var tx = roda.transaction();
-          c.del('foo', tx); //local op
-          c.put('foo', {c:'c'}, tx);
-          tx.commit();
-          a.liveStream().drop(1).pull(function(err, data){
+        tx.commit(function(){
+          c.liveStream().drop(1).pull(function(err, data){
             console.log(data);
             t.equal(
-              data._from, cFrom, 
-              'non-conflict merged C gets from'
+              data._from, bFrom, 
+              'non-conflict merged B gets from'
             );
+            var cFrom = data._rev;
+            var tx = roda.transaction();
+            c.del('foo', tx); //local op
+            c.put('foo', {c:'c'}, tx);
+            tx.commit(function(){
+              a.liveStream().drop(1).pull(function(err, data){
+                console.log(data);
+                t.equal(
+                  data._from, cFrom, 
+                  'non-conflict merged C gets from'
+                );
+              });
+            });
           });
         });
 
