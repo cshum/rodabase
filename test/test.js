@@ -696,9 +696,9 @@ test('Replication merge conflict resolution', function(t){
   function conflict(ctx, next){
     //conflicted document post into c
     conflicts.post(ctx.conflict, ctx.transaction);
-    if(ctx.conflict._id === 'a'){
-      t.error('a should not conflict');
-      console.log(ctx.conflict, ctx.result);
+    if(ctx.conflict._id === 'foo'){
+      t.error('foo should not conflict');
+      console.log('foo conflict', ctx.conflict, ctx.result);
     }
     next();
   }
@@ -738,28 +738,30 @@ test('Replication merge conflict resolution', function(t){
         var tx = roda.transaction();
         b.del('foo', tx); //local op
         b.put('foo',{b:'b'}, tx);
-        tx.commit(function(){
-          c.liveStream().drop(1).pull(function(err, data){
+        tx.commit();
+        setTimeout(function(){
+          c.get('foo', function(err, data){
             console.log(data);
             t.equal(
               data._from, bFrom, 
-              'non-conflict merged B gets from'
+              'non-conflict merged B gets from A'
             );
             var cFrom = data._rev;
             var tx = roda.transaction();
             c.del('foo', tx); //local op
             c.put('foo', {c:'c'}, tx);
-            tx.commit(function(){
-              a.liveStream().drop(1).pull(function(err, data){
+            tx.commit();
+            setTimeout(function(){
+              a.get('foo', function(err, data){
                 console.log(data);
                 t.equal(
                   data._from, cFrom, 
-                  'non-conflict merged C gets from'
+                  'non-conflict merged C gets from A'
                 );
               });
-            });
+            }, 200);
           });
-        });
+        }, 200);
 
       });
     }, 1000);
