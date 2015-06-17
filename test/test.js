@@ -684,17 +684,18 @@ test('Replication conflict resolution', function(t){
 });
 
 test('Replication merge conflict resolution', function(t){
-  t.plan(7);
+  t.plan(8);
 
   var server = roda('serverC');
   var server2 = roda('serverC2');
   var a = roda('a5');
   var b = roda('b5');
   var c = roda('c5');
+  var conflicts = roda('conflicts5');
 
   function conflict(ctx, next){
     //conflicted document post into c
-    c.post(ctx.conflict, ctx.transaction);
+    conflicts.post(ctx.conflict, ctx.transaction);
     if(ctx.conflict._id === 'a'){
       t.error('a should not conflict');
       console.log(ctx.conflict, ctx.result);
@@ -704,50 +705,61 @@ test('Replication merge conflict resolution', function(t){
   server.use('conflict', conflict);
   server2.use('conflict', conflict);
 
-  var result, fromA, fromB;
-  function read(arr){
-    if(result){
-      t.deepEqual(arr, result, 'result consistent');
-    }else{
-      result = arr;
-      t.equal(arr.length, n, 'n results');
-    }
-  }
   //exactly n conflicts between server and server2
-  c.liveStream().drop(n - 1).pull(function(err, doc){
-    c.readStream().toArray(function(arr){
+  conflicts.liveStream().drop(n - 1).pull(function(err, doc){
+    conflicts.readStream().toArray(function(arr){
       t.equal(arr.length, n, 'server n conflicts');
     });
     setTimeout(function(){
+      var result;
+      function read(arr){
+        if(result){
+          t.deepEqual(arr, result, 'result consistent');
+        }else{
+          result = arr;
+          t.equal(arr.length, n, 'n results');
+        }
+      }
       //read consistencies
       server.readStream().toArray(read);
       server2.readStream().toArray(read);
       a.readStream().toArray(read);
       b.readStream().toArray(read);
+      c.readStream().toArray(read);
 
       //get from, should not conflict
+      var tx = roda.transaction();
+      a.del('foo', tx); //non exists del
+      a.put('foo',{a:'a'}, tx);
+      tx.commit();
       b.liveStream().pull(function(err, data){
-        fromB = data._rev;
+        console.log(data);
+        var bFrom = data._rev;
         var tx = roda.transaction();
-        b.put('a',{a:'b'}, tx);
-        b.del('a', tx);
-        b.put('a',{foo:'bar'}, tx);
+        b.del('foo', tx); //local op
+        b.put('foo',{b:'b'}, tx);
         tx.commit();
-      });
-      a.liveStream().drop(4).pull(function(){
-        a.get('a',function(err, data){
-          t.equal(data._from, fromB, 'non-conflict merged gets from B');
-          a.put('a', {a:'aaaa'}, function(err, data){
-            fromA = data._rev;
+        c.liveStream().drop(1).pull(function(err, data){
+          console.log(data);
+          t.equal(
+            data._from, bFrom, 
+            'non-conflict merged B gets from'
+          );
+          var cFrom = data._rev;
+          var tx = roda.transaction();
+          c.del('foo', tx); //local op
+          c.put('foo', {c:'c'}, tx);
+          tx.commit();
+          a.liveStream().drop(1).pull(function(err, data){
             console.log(data);
-            b.liveStream().pull(function(err, data){
-              console.log(data);
-              t.equal(data._from, fromA, 'non-conflict merged gets from A');
-            });
+            t.equal(
+              data._from, cFrom, 
+              'non-conflict merged C gets from'
+            );
           });
         });
+
       });
-      a.put('a',{a:'a'});
     }, 1000);
 
   });
@@ -763,6 +775,7 @@ test('Replication merge conflict resolution', function(t){
   tx.commit(function(){
     sync(b, server);
     sync(a, server2);
+    sync(c, server);
     pipe(server, server2);
     pipe(server2, server);
   });
