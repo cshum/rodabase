@@ -526,7 +526,6 @@ function sync(client, server){
     .pipe(client.replicateStream());
 }
 function pipe(source, dest){
-  var count = 0;
   dest.clockStream()
     .pipe(source.changesStream({ live: true }))
     .take(Math.floor((0.67 + Math.random())*n))
@@ -538,7 +537,7 @@ function pipe(source, dest){
     .pipe(dest.replicateStream());
 }
 
-test('Replication', function(t){
+test('Replications', function(t){
   t.plan(3);
 
   var a = roda('a1');
@@ -582,7 +581,7 @@ test('Replication', function(t){
 
 });
 
-test('Replication gets-from ordering', function(t){
+test('Replication casual ordering', function(t){
   t.plan(6);
 
   function pipe(source, dest, delay){
@@ -618,16 +617,26 @@ test('Replication gets-from ordering', function(t){
   tx.commit(function(){
     b.liveStream().pull(function(err, data){
       data.i = 1;
+      //gets from checkpoint
       b.put('a1', data);
-      a.put('b1', data); //redundant put
     });
     a.liveStream().drop(1).pull(function(err, data){
       data.i = 1;
+      //gets from checkpoint
       a.put('b1', data);
-      a.put('b1', data); //redundant put
     });
     setTimeout(function(){
-      sync(a, c);
+      c.clockStream()
+        .pipe(a.changesStream())
+        .take(6)
+        .collect()
+        .map(function(list){
+          //pipe to replicate stream in a reversed order
+          return list.reverse();
+        })
+        .flatten()
+        .ratelimit(1,300) //rate limit so that replicate hits not ready
+        .pipe(c.replicateStream());
     }, 500);
   });
   var current = {};
@@ -715,9 +724,9 @@ test('Replication conflict detection', function(t){
                   'C gets from B no conflict'
                 );
               });
-            }, 200);
+            }, 500);
           });
-        }, 200);
+        }, 500);
 
       });
     }, 1000);
