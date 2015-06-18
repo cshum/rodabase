@@ -88,32 +88,28 @@ test('timestamp', function(t){
   t.end();
 });
 
-test('Transaction: lock increment', function(t){
+test('Transaction: parallelism', function(t){
   var api = roda('1');
-  var ok = true;
+  var count = 0;
 
-  t.plan(2);
+  t.plan(1);
   function run(i){
     var tx = roda.transaction();
     api.get('k', tx, function(err, val){
-      ok &= !(err && !err.notFound);
-
       val = val || { k: 0 };
       val.k++;
 
       api.put('k',val,tx);
     });
-    tx.commit();
+    tx.commit(function(err){
+      count++;
+      if(count === n)
+        api.get('k', function(err, val){
+          t.equal(val.k, n, 'Incremential');
+        });
+    });
   }
-  for(var i = 0; i < n; i++)
-    run(i);
-
-  var tx = roda.transaction();
-  api.get('k', tx, function(err, val){
-    t.ok(ok, 'ok');
-    t.equal(val.k, n, 'Incremential');
-  });
-  tx.commit();
+  for(var i = 0; i < n; i++) run(i);
 });
 
 test('Transaction: sequential operations', function(t){
@@ -162,7 +158,7 @@ test('Transaction: isolation', function(t){
   });
 });
 
-test('CRUD', function(t){
+test('Transactional CRUD', function(t){
   var api = roda('crud');
   t.plan(10);
 
@@ -528,7 +524,7 @@ function sync(client, server){
 function pipe(source, dest){
   dest.clockStream()
     .pipe(source.changesStream({ live: true }))
-    .take(Math.floor((0.67 + Math.random())*n))
+    .take(n)
     .on('end', function(){
       //simulate reconnection such that 
       //clockStream triggered more than once
@@ -705,29 +701,30 @@ test('Replication conflict detection', function(t){
         var tx = roda.transaction();
         b.del('foo', tx); //local op
         b.put('foo',{b:'b'}, tx);
-        tx.commit();
-        setTimeout(function(){
-          c.get('foo', function(err, data){
-            t.equal(
-              data._from, bFrom, 
-              'B gets from A no conflict'
-            );
-            var cFrom = data._rev;
-            var tx = roda.transaction();
-            c.put('foo', {bar: 'whatever'}, tx); //local op
-            c.put('foo', {c:'c'}, tx);
-            tx.commit();
-            setTimeout(function(){
-              a.get('foo', function(err, data){
-                t.equal(
-                  data._from, cFrom, 
-                  'C gets from B no conflict'
-                );
+        tx.commit(function(){
+          c.liveStream().drop(1).pull(function(){
+            c.get('foo', function(err, data){
+              t.equal(
+                data._from, bFrom, 
+                'B gets from A no conflict'
+              );
+              var cFrom = data._rev;
+              var tx = roda.transaction();
+              c.put('foo', {bar: 'whatever'}, tx); //local op
+              c.put('foo', {c:'c'}, tx);
+              tx.commit(function(){
+                a.liveStream().drop(1).pull(function(){
+                  a.get('foo', function(err, data){
+                    t.equal(
+                      data._from, cFrom, 
+                      'C gets from B no conflict'
+                    );
+                  });
+                });
               });
-            }, 500);
+            });
           });
-        }, 500);
-
+        });
       });
     }, 1000);
 
