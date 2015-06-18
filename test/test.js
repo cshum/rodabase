@@ -526,8 +526,15 @@ function sync(client, server){
     .pipe(client.replicateStream());
 }
 function pipe(source, dest){
+  var count = 0;
   dest.clockStream()
     .pipe(source.changesStream({ live: true }))
+    .take(Math.floor((0.67 + Math.random())*n))
+    .on('end', function(){
+      //simulate reconnection such that 
+      //clockStream triggered more than once
+      pipe(source, dest);
+    })
     .pipe(dest.replicateStream());
 }
 
@@ -566,7 +573,7 @@ test('Replication', function(t){
   pipe(a, c);
 
   //stress
-  for(i = 0; i < 5; i++){
+  for(i = 0; i < 3; i++){
     pipe(a, d);
     pipe(b, d);
     pipe(c, d);
@@ -598,8 +605,7 @@ test('Replication gets-from ordering', function(t){
   }
   a.use('conflict', noConflict);
   b.use('conflict', noConflict);
-  pipe(a, b);
-  pipe(b, a);
+  sync(a, b);
 
   var tx = roda.transaction();
 
@@ -621,7 +627,7 @@ test('Replication gets-from ordering', function(t){
       a.put('b1', data); //redundant put
     });
     setTimeout(function(){
-      pipe(a, c);
+      sync(a, c);
     }, 500);
   });
   var current = {};
