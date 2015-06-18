@@ -509,6 +509,66 @@ test('Index mapper and range', function(t){
   });
 });
 
+function pipe(source, dest){
+  var count = 0;
+  var stream = dest.clockStream()
+    .pipe(source.changesStream({ live: true }))
+    .map(function(data){
+      count++;
+      //simulate reconnection such that 
+      //clockStream triggered more than once
+      if(count === n)
+        pipe(source, dest);
+      return data;
+    })
+    .take(n)
+    .pipe(dest.replicateStream());
+}
+
+test('Replications', function(t){
+  t.plan(3);
+
+  var a = roda('a1');
+  var b = roda('b1');
+  var c = roda('c1');
+  var d = roda('d1');
+  var i, result;
+
+  a.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    a.readStream().toArray(function(arr){
+      result = arr;
+      t.equal(result.length, n*2, 'b to a');
+    });
+  });
+  c.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    c.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'a to c');
+    });
+  });
+  d.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    d.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'sink');
+    });
+  });
+
+  for(i = 0; i < n; i++)
+    a.post({a:i});
+  for(i = 0; i < n; i++)
+    b.post({b:i});
+
+  pipe(b, a);
+  pipe(a, c);
+
+  //stress
+  for(i = 0; i < 3; i++){
+    pipe(a, d);
+    pipe(b, d);
+    pipe(c, d);
+    pipe(d, d);
+  }
+
+});
+
 function sync(client, server){
   server.clockStream()
     .pipe(client.changesStream({ live: true }))
@@ -664,7 +724,7 @@ test('Replication conflict detection', function(t){
           });
         }, 1000);
       });
-    }, 1000);
+    }, 2000);
 
   });
 
@@ -684,62 +744,3 @@ test('Replication conflict detection', function(t){
   });
 });
 
-function pipe(source, dest){
-  var count = 0;
-  var stream = dest.clockStream()
-    .pipe(source.changesStream({ live: true }))
-    .map(function(data){
-      count++;
-      //simulate reconnection such that 
-      //clockStream triggered more than once
-      if(count === n)
-        pipe(source, dest);
-      return data;
-    })
-    .take(n)
-    .pipe(dest.replicateStream());
-}
-
-test('Replications', function(t){
-  t.plan(3);
-
-  var a = roda('a1');
-  var b = roda('b1');
-  var c = roda('c1');
-  var d = roda('d1');
-  var i, result;
-
-  a.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    a.readStream().toArray(function(arr){
-      result = arr;
-      t.equal(result.length, n*2, 'b to a');
-    });
-  });
-  c.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    c.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'a to c');
-    });
-  });
-  d.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    d.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'sink');
-    });
-  });
-
-  for(i = 0; i < n; i++)
-    a.post({a:i});
-  for(i = 0; i < n; i++)
-    b.post({b:i});
-
-  pipe(b, a);
-  pipe(a, c);
-
-  //stress
-  for(i = 0; i < 3; i++){
-    pipe(a, d);
-    pipe(b, d);
-    pipe(c, d);
-    pipe(d, d);
-  }
-
-});
