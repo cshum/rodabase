@@ -685,14 +685,18 @@ test('Replication conflict detection', function(t){
 });
 
 function pipe(source, dest){
-  dest.clockStream()
+  var count = 0;
+  var stream = dest.clockStream()
     .pipe(source.changesStream({ live: true }))
-    .take(n)
-    .on('end', function(){
+    .map(function(data){
+      count++;
       //simulate reconnection such that 
       //clockStream triggered more than once
-      pipe(source, dest);
+      if(count === n)
+        pipe(source, dest);
+      return data;
     })
+    .take(n)
     .pipe(dest.replicateStream());
 }
 
