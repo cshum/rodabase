@@ -1,6 +1,6 @@
 {
   "name": "rodabase",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Transactional document store for Node.js and browsers. Built on LevelDB.",
   "scripts": {
     "test": "set -e; rm -rf test/db; node test/test.js;",
@@ -30,6 +30,7 @@
     "level-js": "^2.1.6",
     "level-sublevel": "^6.3.15",
     "levelup": "^0.19.0",
+    "object-is": "^1.0.1",
     "randombytes": "^2.0.1"
   },
   "devDependencies": {

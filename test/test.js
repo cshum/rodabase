@@ -12,11 +12,7 @@ var _ = require('underscore');
 var H = require('highland');
 
 var n = 50;
-// var n = 100;
-var roda = rodabase('./test/db', {
-  ttl: n * 1000
-  // db: require('jsondown')
-});
+var roda = rodabase('./test/db', { ttl: n * 1000 });
 var util = roda.util;
 
 //simulate inconsistent delay
@@ -521,61 +517,6 @@ function sync(client, server){
     .pipe(server.changesStream({ live: true }))
     .pipe(client.replicateStream());
 }
-function pipe(source, dest){
-  dest.clockStream()
-    .pipe(source.changesStream({ live: true }))
-    .take(n)
-    .on('end', function(){
-      //simulate reconnection such that 
-      //clockStream triggered more than once
-      pipe(source, dest);
-    })
-    .pipe(dest.replicateStream());
-}
-
-test('Replications', function(t){
-  t.plan(3);
-
-  var a = roda('a1');
-  var b = roda('b1');
-  var c = roda('c1');
-  var d = roda('d1');
-  var i, result;
-
-  a.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    a.readStream().toArray(function(arr){
-      result = arr;
-      t.equal(result.length, n*2, 'b to a');
-    });
-  });
-  c.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    c.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'a to c');
-    });
-  });
-  d.liveStream().drop(n*2 - 1).pull(function(err, doc){
-    d.readStream().toArray(function(arr){
-      t.deepEqual(arr, result, 'sink');
-    });
-  });
-
-  for(i = 0; i < n; i++)
-    a.post({a:i});
-  for(i = 0; i < n; i++)
-    b.post({b:i});
-
-  pipe(b, a);
-  pipe(a, c);
-
-  //stress
-  for(i = 0; i < 3; i++){
-    pipe(a, d);
-    pipe(b, d);
-    pipe(c, d);
-    pipe(d, d);
-  }
-
-});
 
 test('Replication casual ordering', function(t){
   t.plan(6);
@@ -645,7 +586,6 @@ test('Replication casual ordering', function(t){
       t.ok(!current[mid] || time > current[mid], 'casual ordering');
       current[mid] = time;
     });
-
 });
 
 test('Replication conflict detection', function(t){
@@ -701,30 +641,28 @@ test('Replication conflict detection', function(t){
         var tx = roda.transaction();
         b.del('foo', tx); //local op
         b.put('foo',{b:'b'}, tx);
-        tx.commit(function(){
-          c.liveStream().drop(1).pull(function(){
-            c.get('foo', function(err, data){
-              t.equal(
-                data._from, bFrom, 
-                'B gets from A no conflict'
-              );
-              var cFrom = data._rev;
-              var tx = roda.transaction();
-              c.put('foo', {bar: 'whatever'}, tx); //local op
-              c.put('foo', {c:'c'}, tx);
-              tx.commit(function(){
-                a.liveStream().drop(1).pull(function(){
-                  a.get('foo', function(err, data){
-                    t.equal(
-                      data._from, cFrom, 
-                      'C gets from B no conflict'
-                    );
-                  });
-                });
+        tx.commit();
+        setTimeout(function(){
+          c.get('foo', function(err, data){
+            t.equal(
+              data._from, bFrom, 
+              'B gets from A no conflict'
+            );
+            var cFrom = data._rev;
+            var tx = roda.transaction();
+            c.put('foo', {bar: 'whatever'}, tx); //local op
+            c.put('foo', {c:'c'}, tx);
+            tx.commit();
+            setTimeout(function(){
+              a.get('foo', function(err, data){
+                t.equal(
+                  data._from, cFrom, 
+                  'C gets from B no conflict'
+                );
               });
-            });
+            }, 1000);
           });
-        });
+        }, 1000);
       });
     }, 1000);
 
@@ -744,4 +682,60 @@ test('Replication conflict detection', function(t){
     sync(c, server);
     sync(server, server2);
   });
+});
+
+function pipe(source, dest){
+  dest.clockStream()
+    .pipe(source.changesStream({ live: true }))
+    .take(n)
+    .on('end', function(){
+      //simulate reconnection such that 
+      //clockStream triggered more than once
+      pipe(source, dest);
+    })
+    .pipe(dest.replicateStream());
+}
+
+test('Replications', function(t){
+  t.plan(3);
+
+  var a = roda('a1');
+  var b = roda('b1');
+  var c = roda('c1');
+  var d = roda('d1');
+  var i, result;
+
+  a.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    a.readStream().toArray(function(arr){
+      result = arr;
+      t.equal(result.length, n*2, 'b to a');
+    });
+  });
+  c.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    c.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'a to c');
+    });
+  });
+  d.liveStream().drop(n*2 - 1).pull(function(err, doc){
+    d.readStream().toArray(function(arr){
+      t.deepEqual(arr, result, 'sink');
+    });
+  });
+
+  for(i = 0; i < n; i++)
+    a.post({a:i});
+  for(i = 0; i < n; i++)
+    b.post({b:i});
+
+  pipe(b, a);
+  pipe(a, c);
+
+  //stress
+  for(i = 0; i < 3; i++){
+    pipe(a, d);
+    pipe(b, d);
+    pipe(c, d);
+    pipe(d, d);
+  }
+
 });
