@@ -1,11 +1,5 @@
-var dbPath = './test/db';
-
-if(process.browser){
+if(process.browser)
   require("indexeddbshim");
-  require('level-js').destroy(dbPath, function(){});
-}else{
-  require('rimraf').sync(dbPath);
-}
 
 var rodabase = require('../');
 
@@ -14,14 +8,18 @@ var _ = require('underscore');
 var H = require('highland');
 
 var n = parseInt(process.argv[3]) || 50;
+var dbPath = './test/db';
 var dbName = process.argv[2] || (process.browser ? 'level-js':'leveldown');
+var db = require(dbName);
 var delay = process.argv[4] !== 'no';
 console.log('Rodabase test db = '+dbName+', n = '+n+', delay = '+(delay ? 'yes':'no'));
 
-var roda = rodabase('./test/db', {
-  ttl: n * 1000,
-  db: require(dbName)
-});
+if(!process.browser)
+  require('rimraf').sync(dbPath);
+if(typeof db.destroy === 'function')
+  db.destroy(dbPath, function(){});
+
+var roda = rodabase('./test/db', { ttl: n * 1000, db: db });
 
 //simulate inconsistent delay
 if(delay){
