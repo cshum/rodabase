@@ -1,8 +1,12 @@
+var dbPath = './test/db';
+
 if(process.browser){
   require("indexeddbshim");
   var idb = window.indexedDB || window.mozIndexedDB || 
     window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
-  idb.deleteDatabase('IDBWrapper-./test/db');
+  idb.deleteDatabase('IDBWrapper-'+dbPath);
+}else{
+  require('rimraf').sync(dbPath);
 }
 
 var rodabase = require('../');
@@ -11,31 +15,38 @@ var test = require('tape');
 var _ = require('underscore');
 var H = require('highland');
 
-var n = 50;
-var roda = rodabase('./test/db', { ttl: n * 1000 });
-var util = roda.util;
+var n = parseInt(process.argv[3]) || 50;
+var dbName = process.argv[2] || 'leveldown';
+var delay = process.argv[4] !== 'no';
+console.log('Rodabase test db = '+dbName+', n = '+n+', delay = '+(delay ? 'yes':'no'));
+
+var roda = rodabase('./test/db', {
+  ttl: n * 1000,
+  db: require(dbName)
+});
 
 //simulate inconsistent delay
-roda.fn
-  .use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
-  })
-  .use('diff', function(ctx, next){
+if(delay){
+  roda.fn.use('validate', function(ctx, next){
     setTimeout(next, Math.random() * 5);
   });
+  roda.fn.use('diff', function(ctx, next){
+    setTimeout(next, Math.random() * 5);
+  });
+}
 
 test('encode decode', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
-  var em = util.encode(m);
+  var em = roda.util.encode(m);
 
   for(var i = 1; i < 1000; i++){
     var n = Math.random() * m;
-    var en = util.encode(n);
+    var en = roda.util.encode(n);
 
     lex &= (n >= m && en >= em) || (n < m && en < em);
-    id &= n === util.decode(en);
+    id &= n === roda.util.decode(en);
   }
   t.ok(lex, 'lexicographical');
   t.ok(id, 'identical');
@@ -46,14 +57,14 @@ test('encode decode number', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
-  var em = util.encodeNumber(m, true);
+  var em = roda.util.encodeNumber(m, true);
 
   for(var i = 1; i < 1000; i++){
     var n = Math.random() * m;
-    var en = util.encodeNumber(n);
+    var en = roda.util.encodeNumber(n);
 
     lex &= (n >= m && en >= em) || (n < m && en < em);
-    id &= n === util.decodeNumber(en);
+    id &= n === roda.util.decodeNumber(en);
   }
   t.ok(lex, 'lexicographical');
   t.ok(id, 'identical');
@@ -67,8 +78,8 @@ test('clocks', function(t){
     '12345678':'def',
     '23456789':'ghi'
   };
-  t.deepEqual(util.clocksObject(arr), obj, 'clocksObject');
-  t.deepEqual(util.clocks(obj), arr, 'clocks');
+  t.deepEqual(roda.util.clocksObject(arr), obj, 'clocksObject');
+  t.deepEqual(roda.util.clocks(obj), arr, 'clocks');
   t.end();
 });
 
@@ -76,7 +87,7 @@ test('timestamp', function(t){
   var prev = 0;
   var ok = true;
   for(var i = 0, l = 1000; i < l; i++){
-    var time = util.timestamp();
+    var time = roda.util.timestamp();
     ok &= prev < time;
     prev = time;
   }
@@ -242,17 +253,17 @@ test('Transaction middleware: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('6').put(util.encodeNumber(i), { i: i }, tx);
+    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx);
 
   for(i = 0; i < n; i+=3)
-    roda('6').del(util.encodeNumber(i), tx);
+    roda('6').del(roda.util.encodeNumber(i), tx);
 
-  roda('6').del(util.encodeNumber(0), tx, function(err){
+  roda('6').del(roda.util.encodeNumber(0), tx, function(err){
     t.ok(err.notFound, 'notFound error for non-exists del');
   });
 
   for(i = 0; i < n; i+=2)
-    roda('6.1').del(util.encodeNumber(i), tx);
+    roda('6.1').del(roda.util.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -286,14 +297,14 @@ test('timeStream and trigger', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    api.put(util.encodeNumber(i), { i: i }, tx);
+    api.put(roda.util.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    api.put(util.encodeNumber(i), { i: i }, tx); //redundant put
+    api.put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    api.del(util.encodeNumber(i), tx);
+    api.del(roda.util.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    api.del(util.encodeNumber(i), tx); //non-exist del
+    api.del(roda.util.encodeNumber(i), tx); //non-exist del
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');

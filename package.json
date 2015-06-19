@@ -3,8 +3,8 @@
   "version": "0.6.2",
   "description": "Transactional document store for Node.js and browsers. Built on LevelDB.",
   "scripts": {
-    "test": "set -e; rm -rf test/db; node test/test.js;",
-    "coverage": "set -e; rm -rf test/db; ./node_modules/istanbul/lib/cli.js cover test/test.js;",
+    "test": "set -e; node test/test.js;",
+    "coverage": "set -e; ./node_modules/istanbul/lib/cli.js cover test/test.js;",
     "browser": "beefy test/test.js:test.js"
   },
   "repository": {
@@ -36,10 +36,11 @@
   "devDependencies": {
     "beefy": "^2.1.5",
     "browserify": "^10.1.3",
-    "indexeddbshim": "^2.0.1",
     "coveralls": "^2.11.2",
+    "indexeddbshim": "^2.0.1",
     "istanbul": "^0.3.15",
     "leveldown": "^0.10.5",
+    "rimraf": "^2.4.0",
     "tape": "^3.0.2",
     "underscore": "^1.7.0"
   }
