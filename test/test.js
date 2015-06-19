@@ -514,12 +514,8 @@ test('Index mapper and range', function(t){
 });
 
 function pipe(source, dest){
-  //simulate reconnection such that 
-  //clockStream triggered more than once
   var stream = dest.clockStream()
     .pipe(source.changesStream({ live: true }))
-    .take(n)
-    .on('end',pipe.bind(null, source, dest))
     .pipe(dest.replicateStream());
 }
 
@@ -533,26 +529,20 @@ test('Replications', function(t){
   var i, result;
 
   //avoid process exits
-  var ato = setTimeout(function(){}, n * 1000);
-  var cto = setTimeout(function(){}, n * 1000);
-  var dto = setTimeout(function(){}, n * 1000);
   a.liveStream().drop(n*2 - 1).pull(function(err, doc){
     a.readStream().toArray(function(arr){
       result = arr;
       t.equal(result.length, n*2, 'b to a');
-      clearTimeout(ato);
     });
   });
   c.liveStream().drop(n*2 - 1).pull(function(err, doc){
     c.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'a to c');
-      clearTimeout(cto);
     });
   });
   d.liveStream().drop(n*2 - 1).pull(function(err, doc){
     d.readStream().toArray(function(arr){
       t.deepEqual(arr, result, 'sink');
-      clearTimeout(dto);
     });
   });
 
