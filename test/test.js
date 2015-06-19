@@ -2,9 +2,7 @@ var dbPath = './test/db';
 
 if(process.browser){
   require("indexeddbshim");
-  var idb = window.indexedDB || window.mozIndexedDB || 
-    window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
-  idb.deleteDatabase('IDBWrapper-'+dbPath);
+  require('level-js').destroy(dbPath, function(){});
 }else{
   require('rimraf').sync(dbPath);
 }
@@ -16,7 +14,7 @@ var _ = require('underscore');
 var H = require('highland');
 
 var n = parseInt(process.argv[3]) || 50;
-var dbName = process.argv[2] || 'leveldown';
+var dbName = process.argv[2] || (process.browser ? 'level-js':'leveldown');
 var delay = process.argv[4] !== 'no';
 console.log('Rodabase test db = '+dbName+', n = '+n+', delay = '+(delay ? 'yes':'no'));
 
