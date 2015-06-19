@@ -15,21 +15,18 @@ var H = require('highland');
 var n = parseInt(process.argv[3]) || 50;
 var dbName = process.argv[2] || (process.browser ? 'level-js':'leveldown');
 var db = require(dbName);
-var delay = process.argv[4] !== 'no';
 
 var roda = rodabase(dbPath, { ttl: n * 1000, db: db });
 
-console.log('Rodabase test db = '+dbName+', n = '+n+', delay = '+(delay ? 'yes':'no'));
+console.log('Rodabase test db = '+dbName+', n = '+n);
 
 //simulate inconsistent delay
-if(delay){
-  roda.fn.use('validate', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
-  });
-  roda.fn.use('diff', function(ctx, next){
-    setTimeout(next, Math.random() * 5);
-  });
-}
+roda.fn.use('validate', function(ctx, next){
+  setTimeout(next, Math.random() * 5);
+});
+roda.fn.use('diff', function(ctx, next){
+  setTimeout(next, Math.random() * 5);
+});
 
 test('encode decode', function(t){
   var lex = true;
