@@ -1,5 +1,7 @@
-if(process.browser)
+if(process.browser){
   require("indexeddbshim");
+  require("level-js");
+}
 
 var rodabase = require('../');
 
