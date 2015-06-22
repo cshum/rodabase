@@ -160,10 +160,16 @@ test('Transaction: isolation', function(t){
 
 test('Transactional CRUD', function(t){
   var api = roda('crud');
-  t.plan(10);
+  t.plan(12);
 
-  api.post({'foo':'bar'}, function(err, val){
+  api.create('asdf',{'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'create');
+    api.create('asdf',{'foo':'bla'}, function(err, val){
+      t.ok(err.exists, 'create error if exists');
+    });
+  });
+  api.post({'foo':'bar'}, function(err, val){
+    t.equal(val.foo, 'bar', 'post');
   });
   api.update('foo', {'foo':'bar'}, function(err){
     t.ok(err.notFound, 'error update key not found');
