@@ -82,7 +82,7 @@ Example callback `doc`:
 Create a new document `doc` with an auto-generated `_id`.
 Auto generated _id is a unique, URL-safe, time sorted string.
 
-Optional bind to a [transaction](#transaction) instance `tx`.
+Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').post({ foo: 'bar' }, function(err, doc){
   //handle callback
@@ -100,7 +100,7 @@ Example callback `doc`:
 ####.get(id, [tx], [cb])
 Retrieve a document specified by `id`. If document not exists, callback with `notFound` error.
 
-Optional [transaction](#transaction) instance `tx`.
+Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').get('bob', function(err, doc){
   if(err){
@@ -115,14 +115,16 @@ roda('users').get('bob', function(err, doc){
 });
 ```
 By binding to a [transaction](#transaction) instance, can perform batched operations in an atomic, isolated manner.
-```
+```js
 var tx = roda.transaction();
 var users = roda('users');
 var logs = roda('logs');
+
 //Transactional get and put
 users.get('bob', tx, function(err, doc){
   if(!doc)
     return tx.rollback(new Error('not exists'));
+
   doc.count++;
   users.put('bob', doc, tx);
   logs.post({ other: 'stuffs' }, tx);
@@ -138,16 +140,19 @@ Delete a document specified by `id`. If document not exists, callback with `notF
 Optional [transaction](#transaction) instance `tx`.
 
 ####.readStream([options])
-* `index`
-* `options`
-  * `prefix`
-  * `gt`
-  * `gte`
-  * `lt`
-  * `lte`
-  * `eq`
+Obtain a ReadStream of the Roda section by calling the `readStream()` method. The resulting stream is a [Highland](http://highlandjs.org/), Node Readable stream.
+You can specify range options control the range of documents that are streamed. See [Index Mapper](#index-mapper) for more examples.
+
+Optional `options` object with the following options:
+  * `gt` (greater than), `gte` (greater than or equal) define the lower bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
+  * `lt` (less than), `lte` (less than or equal) define the higher bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
+  * `reverse` boolean, default `false`, set `true` to reverse stream output.
+  * `limit` number, limit the number of results. Default no limit.
+  * `index` define the [index mapper](#index-mapper) to be used. Default indexed by `_id`.
+  * `prefix` define the string or array prefix of `_id` or `_key` to be streamed. Default no prefix.
 
 ####.liveStream()
+Obtain a never ending ReadStream of the Roda section for reading real-time changes of documents.
 
 ###Index Mapper
 ####.index(name, mapper)
@@ -244,7 +249,7 @@ people.put({ name: 123 }, function(err, val){
 ```
 
 ####.use('diff', [hook...])
-At `diff` stage, access to document and namespace clock is acquired.
+At `diff` stage, access to document and section clock is acquired.
 Current and resulting document can be compared for additional log, diff related operations.
 
 `hook` is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
@@ -261,7 +266,7 @@ count.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result.n || 0;
 
-  //Transaction works across namespaces.
+  //Transaction works across sections
   delta.put({ delta: to - from }, ctx.transaction);
 
   next();
