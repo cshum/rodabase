@@ -528,6 +528,12 @@ test('Index mapper and range', function(t){
 function pipe(source, dest){
   var stream = dest.clockStream()
     .pipe(source.changesStream({ live: true }))
+    .take(n)
+    .on('end', function(){
+      //simulate reconnection such that 
+      //clockStream triggered more than once
+      pipe(source, dest);
+    })
     .pipe(dest.replicateStream());
 }
 
