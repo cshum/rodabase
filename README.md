@@ -35,8 +35,8 @@ All operations are asynchronous although they don't necessarily require a callba
  
 
 - [CRUD](#crud)
-  - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.put(id, doc, [tx], [cb])](#putid-doc-tx-cb)
+  - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.readStream([options])](#readstreamoptions)
@@ -53,62 +53,89 @@ All operations are asynchronous although they don't necessarily require a callba
   - [.replicateStream([options])](#replicatestreamoptions)
 - [Conflict Resolution](#conflict-resolution)
   - [.use('conflict', [hook...])](#useconflict-hook)
+- [Timeline](#timeline)
+  - [.timeStream([options])](#timestreamoptions)
+  - [.trigger(job, [options])](#triggerjob-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ###CRUD
-####.post(doc, [tx], [cb])
 ####.put(id, doc, [tx], [cb])
-Inserting, updating data into Rodabase. 
+Create a new document or update an existing document `doc` by specifying `id`.
 
-* `id`:  Primary key under namespace. Must be a string. Will auto generate a unique ID if not specifying one.
-* `doc`: Resulting document. Must be a JSON serializable object.
-* `tx`: Optional transaction object. See [Transaction](#transaction) section.
+Optionally bind to a [transaction](#transaction) instance `tx`.
 
 ```js
-//specify _id
-roda('store').put('bob', { foo: 'bar' }, cb);
-/*
+roda('users').put('bob', { foo: 'bar' }, function(err, doc){
+  //handle callback
+});
+```
+Example callback `doc`:
+```json
 { 
   "_id": "bob",
   "foo": "bar", 
   "_rev": "5U42CUvHEz"
-} 
-*/
+}
+```
+####.post(doc, [tx], [cb])
+Create a new document `doc` with an auto-generated `_id`.
+Auto generated _id is a unique, URL-safe, time sorted string.
 
-//auto generated _id
-roda('store').post({ foo: 'bar' }, cb);
-/*
+Optional bind to a [transaction](#transaction) instance `tx`.
+```js
+roda('users').post({ foo: 'bar' }, function(err, doc){
+  //handle callback
+});
+```
+Example callback `doc`:
+```json
 { 
-  "_id": "FZBJIBTCaLEJk8924J0A",
+  "_id": "FZBJIBTCaEJk8924J0A",
   "foo": "bar", 
   "_rev": "5U42CUvHF"
-} 
-*/
-
-function cb(err, res){
-  if(err) 
-    return console.error('Error: ', err);
-  console.log(res);
-} 
-
+}
 ```
-Auto generated _id is a 20 chars, URL-safe, base64 time sorted unique ID.
 
 ####.get(id, [tx], [cb])
-Fetching data from Rodabase.
+Retrieve a document specified by `id`. If document not exists, callback with `notFound` error.
 
-* `id`: Primary key under the namespace. Must be a string.
-* `tx`: Optional transaction object. See [Transaction](#transaction) section.
-
-Callback value returns document object.
-If it doesn't exist in the store then the callback will receive a `null` value.
+Optional [transaction](#transaction) instance `tx`.
+```js
+roda('users').get('bob', function(err, doc){
+  if(err){
+    if(err.notFound){
+      //document not exists
+      return;
+    }
+    //I/O or other errors
+    return;
+  }
+  //handle document here
+});
+```
+By binding to a [transaction](#transaction) instance, can perform batched operations in an atomic, isolated manner.
+```
+var tx = roda.transaction();
+var users = roda('users');
+var logs = roda('logs');
+//Transactional get and put
+users.get('bob', tx, function(err, doc){
+  if(!doc)
+    return tx.rollback(new Error('not exists'));
+  doc.count++;
+  users.put('bob', doc, tx);
+  logs.post({ other: 'stuffs' }, tx);
+})
+tx.commit(function(err){
+  //err [Error: not exists] if 'bob' not found
+});
+```
 
 ####.del(id, [tx], [cb])
-Removes data from Rodabase.
+Delete a document specified by `id`. If document not exists, callback with `notFound` error.
 
-* `id`: Primary key under the namespace. Must be a string.
-* `tx`: Optional transaction object. See [Transaction](#transaction) section.
+Optional [transaction](#transaction) instance `tx`.
 
 ####.readStream([options])
 * `index`
@@ -142,13 +169,6 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 #####Mapping & filtering
 #####Prefixing
 ###Transaction
-
-What Rodabase means in context of ACID:
-
-* **Atomicity**: Transactions complete either entirely or no effect at all. Inherent feature of [batched operations](https://github.com/rvagg/node-levelup#dbbatcharray-options-callback-array-form) in LevelDB.
-* **Consistency**: Rodabase allows fine-grain control over data integrity, validations, logging, consistently throughout the application.
-* **Isolation**: Changes of transactions are isolated until successful commits.
-* **Durability**: Committed changes are persistent. The amount of durability is [configurable](https://github.com/rvagg/node-levelup#dbputkey-value-options-callback) as a LevelDB option.
 
 ####roda.transaction()
 
@@ -288,19 +308,12 @@ a.clockStream()
   .pipe(a.replicateStream());
 ```
 
-Client-server replication. Client's `_rev` will be 'merged' with server's roda, such that size of vector clock will not increase with number of clients.
-```js
-//client to server
-server.clockStream()
-  .pipe(client.changesStream({ live: true }))
-  .pipe(server.replicateStream({ merge: true }));
-
-//server to client
-client.clockStream()
-  .pipe(server.changesStream({ live: true }))
-  .pipe(client.replicateStream());
-```
-
 ###Conflict Resolution
 
 ####.use('conflict', [hook...])
+
+###Timeline
+
+####.timeStream([options])
+
+####.trigger(job, [options])
