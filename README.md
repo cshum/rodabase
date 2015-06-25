@@ -1,16 +1,16 @@
 #Rodabase
 
 Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
-* [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
-* Transaction enables snapshot isolation and linearizable local operations.
-* [Casual+ consistency](https://www.cs.cmu.edu/~dga/papers/cops-sosp2011.pdf) preserving replication mechanisms.
-* Storage backends: [LevelDB](https://github.com/level/levelup/wiki/Modules#storage-back-ends) on Node.js. IndexedDB or WebSQL on browser.
+* Stream and middleware based asynchronous API.
+* [Transaction](#transaction) guarantees linearizable local operations.
+* [Casual+ consistency](#replication) preserving replication mechanism.
+* Storage backends: LevelDB on Node.js; IndexedDB on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 [![Coverage Status](https://coveralls.io/repos/cshum/rodabase/badge.svg?branch=master)](https://coveralls.io/r/cshum/rodabase?branch=master)
 
 ```bash
-$ npm install rodabase leveldown@0.10.5
+$ npm install rodabase leveldown@0.10
 ```
 [LevelDOWN](https://github.com/rvagg/node-leveldown) is the default backend store for LevelDB. 
 
@@ -41,12 +41,12 @@ All operations are asynchronous although they don't necessarily require a callba
   - [.del(id, [tx], [cb])](#delid-tx-cb)
   - [.readStream([options])](#readstreamoptions)
   - [.liveStream()](#livestream)
-- [Index Mapper](#index-mapper)
-  - [.index(name, mapper)](#indexname-mapper)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
+- [Index Mapper](#index-mapper)
+  - [.index(name, mapper)](#indexname-mapper)
 - [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
@@ -114,25 +114,6 @@ roda('users').get('bob', function(err, doc){
   //handle document here
 });
 ```
-By binding to a [transaction](#transaction) instance, can perform batched operations in an atomic, isolated manner.
-```js
-var tx = roda.transaction();
-var users = roda('users');
-var logs = roda('logs');
-
-//Transactional get and put
-users.get('bob', tx, function(err, doc){
-  if(!doc)
-    return tx.rollback(new Error('not exists'));
-
-  doc.count++;
-  users.put('bob', doc, tx);
-  logs.post({ other: 'stuffs' }, tx);
-})
-tx.commit(function(err){
-  //err [Error: not exists] if 'bob' not found
-});
-```
 
 ####.del(id, [tx], [cb])
 Delete a document specified by `id`. If document not exists, callback with `notFound` error.
@@ -154,79 +135,44 @@ Optional `options` object with the following options:
 ####.liveStream()
 Obtain a never ending ReadStream of the Roda section for reading real-time changes of documents.
 
-###Index Mapper
-####.index(name, mapper)
-#####Secondary index
-
-```js
-var users = roda('users');
-
-users.index('email', function(doc, emit){
-  emit(doc.email, true); //unique
-});
-users.index('age', function(doc, emit){
-  emit(doc.age); //can be non-unique
-});
-
-users.readStream({ index: 'age', gt: 15 }); //Stream users over age 15
-users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
-```
-#####Mapping & filtering
-#####Prefixing
 ###Transaction
+Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
+
+To make this works, LevelDB and IndexedDB both support atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
+Rodabase takes a step further to support two-phase locking and snapshot isolation:
 
 ####roda.transaction()
 
-Creates a new transaction instance of [level-async-transaction](https://github.com/cshum/level-async-transaction).
-Enable transactional operations by injecting instance into `get()`, `put()`, `del()`.
-Example below demonstrates isolation in transaction instance. 
-
+Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
 ```js
-var count = roda('count');
+var users = roda('users');
+var logs = roda('logs');
 
-//create transaction instances
-var tx = roda.transaction(); 
-var tx2 = roda.transaction();
+//Transactional get and put
+var tx = roda.transaction();
+users.get('bob', tx, function(err, doc){
+  if(!doc)
+    return tx.rollback(new Error('not exists'));
 
-count.put('foo', { n: 167 }, tx);
-
-tx.commit(function(){
-  //tx2 increments n
-  count.get('foo', tx2, function(err, doc){
-    doc.n++;
-    count.put('foo', doc, tx2);
-  });
-
-  count.get('foo', function(err, doc){
-    //doc.n equals 167
-    tx2.commit(function(){
-      count.get('foo', function(err, doc){
-        //doc.n equals 168
-      });
-    });
-  });
+  doc.count++;
+  users.put('bob', doc, tx);
+  logs.post({ other: 'stuffs' }, tx);
+})
+tx.commit(function(err){
+  //err [Error: not exists] if 'bob' not found
 });
-
 ```
 
-Under the hood, each write in Rodabase consists of multiple, transactional reads and writes in LevelDB,
-This can be described as following steps:
-
-1. Begin
-2. `validate` hook for `put`
-3. Read current state of document and clock
-5. `diff` hook for `put` or `del`
-6. Write document, changes and clock
-7. Commit
-
-`validate` and `diff` are transaction hook that enables fine-grain control over data integrity, validations or logging. Additional operations can be attached to current transaction, invokes only on successful commit.
+Rodabase uses [middleware](https://github.com/cshum/ginga#middleware), 
+with `validate` and `diff` hooks invoked on every write operations of both local and replicated documents. 
+These keep track of document changes and integrity check, in a transactional manner.
 
 ####.use('validate', [hook...])
+`validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
 
-`hook` is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
 Context object consists of the following properties:
-* `ctx.result`: Resulting document, can be accessed and modified with custom validation rules.
-* `ctx.transaction`: Transaction instance. Additional operations can be attached.
+* `result`: Result document before locking. Changes can be made during this stage.
+* `transaction`: Transaction instance. Additional operations can be binded.
 
 ```js
 var people = roda('people');
@@ -249,14 +195,14 @@ people.put({ name: 123 }, function(err, val){
 ```
 
 ####.use('diff', [hook...])
-At `diff` stage, access to document and section clock is acquired.
-Current and resulting document can be compared for additional log, diff related operations.
+`diff` invoked when document is locked.
+Current and resulting state of the document can be accessed 
+for additional log, diff related operations.
 
-`hook` is a [Ginga middleware](https://github.com/cshum/ginga#middleware) function. 
 Context object consists of the following properties:
-* `ctx.current`: Current state of document. `null` if this is an insert.
-* `ctx.result`: Resulting document. `ctx.result._deleted === true` if this is a delete. Unlike `validation` hook, resulting document cannot be modified at this stage.
-* `ctx.transaction`: Transaction instance. Additional operations can be attached.
+* `current`: Current state of document. `undefined` if this is a fresh insert.
+* `result`: Resulting document. `ctx.result._deleted === true` if this is a delete. Unlike `validation` middleware, resulting document cannot be modified at this stage.
+* `transaction`: Transaction instance. Additional operations can be binded.
 
 ```js
 var count = roda('count');
@@ -284,7 +230,51 @@ tx.commit(function(){
 });
 ```
 
+###Index Mapper
+####.index(name, mapper)
+#####Secondary index
+
+```js
+var users = roda('users');
+
+users.index('email', function(doc, emit){
+  emit(doc.email, true); //unique
+});
+users.index('age', function(doc, emit){
+  emit(doc.age); //can be non-unique
+});
+
+users.readStream({ index: 'age', gt: 15 }); //Stream users over age 15
+users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
+```
+#####Mapping & filtering
+#####Prefixing
 ###Replication
+
+Base on the CAP theorem, it is impossible to create a system that has strong consistency, is always available for reads and writes, and is able to continue operating during network partitions. Each of these properties is highly desirable. 
+
+Rodabase supports strong consistency for local operations with [transactions](#transaction), 
+while providing replication mechanism that preserves "Casual+" - 
+casual consistency with convergent conflict handling, following the design and implementation of [COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
+
+Rodabase does not define any replication transport. Instead it contains the building blocks: 
+`.clockStream()`, `.changesStream()` and `.replicateStream()` - Node.js compatible "object streams"
+for wiring up the replications based on your application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
+
+```js
+var a = roda('a');
+var b = roda('b');
+
+//a replicate to b
+b.clockStream()
+  .pipe(a.changesStream({ live: true }))
+  .pipe(b.replicateStream());
+
+//b replicate to a
+a.clockStream()
+  .pipe(b.changesStream({ live: true }))
+  .pipe(a.replicateStream());
+```
 
 ####.clockStream()
 
@@ -295,23 +285,8 @@ Everytime a write operation is committed its logical clock is incremented.
 
 ####.replicateStream([options])
 
-Changes will be queued up until `_last` matches destination timestamp.
+Changes will be queued up until `_after` matches destination timestamp.
 
-Master-master replication.
-```js
-var a = roda('a');
-var b = roda('b');
-
-//a to b
-b.clockStream()
-  .pipe(a.changesStream({ live: true }))
-  .pipe(b.replicateStream());
-
-//b to a
-a.clockStream()
-  .pipe(b.changesStream({ live: true }))
-  .pipe(a.replicateStream());
-```
 
 ###Conflict Resolution
 
