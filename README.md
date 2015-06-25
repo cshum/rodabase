@@ -70,7 +70,7 @@ roda('users').put('bob', { foo: 'bar' }, function(err, doc){
   //handle callback
 });
 ```
-Example callback `doc`:
+Example `doc` callback:
 ```json
 { 
   "_id": "bob",
@@ -88,7 +88,7 @@ roda('users').post({ foo: 'bar' }, function(err, doc){
   //handle callback
 });
 ```
-Example callback `doc`:
+Example `doc` callback:
 ```json
 { 
   "_id": "FZBJIBTCaEJk8924J0A",
@@ -185,12 +185,11 @@ people.use('validate', function(ctx, next){
   next();
 });
 
-people.put({ name: 123 }, function(err, val){
-  console.log(err); //Error: Name must be a string.
-
-  people.put({ name: 'bar' }, function(err, val){
-    console.log(val.name); //BAR
-  });
+people.post({ name: 123 }, function(err, val){
+  //Error: Name must be a string.
+});
+people.post({ name: 'bar' }, function(err, val){
+  //val.name === 'BAR'
 });
 ```
 
