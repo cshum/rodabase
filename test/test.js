@@ -387,8 +387,7 @@ test('liveStream timeStream trigger', function(t){
 
 
 test('Index mapper and range', function(t){
-  t.plan(20);
-  // t.plan(20 + n);
+  t.plan(20 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -429,10 +428,17 @@ test('Index mapper and range', function(t){
         t.ok(err.exists, 'Repeated');
       });
       //stress it
-      // for(var i = 0; i< n; i++)
-      //   users.post({ email: 'adrian@cshum.com' }, function(err, val){
-      //     t.ok(err.exists, 'Repeated');
-      //   });
+      for(var i = 0; i< 10; i++){
+        users.post({ email: 'foo@bar.com' }, function(err, val){
+          t.ok(err.exists, 'Repeated');
+        });
+        users.post({ email: 'hello@world.com' }, function(err, val){
+          t.ok(err.exists, 'Repeated');
+        });
+        users.post({ email: 'adrian@cshum.com' }, function(err, val){
+          t.ok(err.exists, 'Repeated');
+        });
+      }
 
       users.readStream({ index:'email' })
         .pluck('email').toArray(function(list){
