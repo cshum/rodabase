@@ -736,7 +736,7 @@ test('Replication conflict detection', function(t){
           });
         }, 1000);
       });
-    }, 2000);
+    }, 3000);
 
   });
 
