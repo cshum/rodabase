@@ -67,16 +67,14 @@ Optionally bind to a [transaction](#transaction) instance `tx`.
 
 ```js
 roda('users').put('bob', { foo: 'bar' }, function(err, doc){
-  //handle callback
+  /* example doc
+  { 
+    "_id": "bob",
+    "foo": "bar", 
+    "_rev": "5U42CUvHEz"
+  }
+  */
 });
-```
-Example `doc` callback:
-```json
-{ 
-  "_id": "bob",
-  "foo": "bar", 
-  "_rev": "5U42CUvHEz"
-}
 ```
 ####.post(doc, [tx], [cb])
 Create a new document `doc` with an auto-generated `_id`.
@@ -85,16 +83,14 @@ Auto generated _id is a unique, URL-safe, time sorted string.
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').post({ foo: 'bar' }, function(err, doc){
-  //handle callback
+  /* example doc
+  { 
+    "_id": "FZBJIBTCaEJk8924J0A",
+    "foo": "bar", 
+    "_rev": "5U42CUvHF"
+  }
+  */
 });
-```
-Example `doc` callback:
-```json
-{ 
-  "_id": "FZBJIBTCaEJk8924J0A",
-  "foo": "bar", 
-  "_rev": "5U42CUvHF"
-}
 ```
 
 ####.get(id, [tx], [cb])
@@ -121,8 +117,8 @@ Delete a document specified by `id`. If document not exists, callback with `notF
 Optional [transaction](#transaction) instance `tx`.
 
 ####.readStream([options])
-Obtain a ReadStream of the Roda section by calling the `readStream()` method. The resulting stream is a [Highland](http://highlandjs.org/), Node Readable stream.
-You can specify range options control the range of documents that are streamed. See [Index Mapper](#index-mapper) for more examples.
+Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
+You can specify range options control the range of documents that are streamed. 
 
 Optional `options` object with the following options:
   * `gt` (greater than), `gte` (greater than or equal) define the lower bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
@@ -132,8 +128,33 @@ Optional `options` object with the following options:
   * `index` define the [index mapper](#index-mapper) to be used. Default indexed by `_id`.
   * `prefix` define the string or array prefix of `_id` or `_key` to be streamed. Default no prefix.
 
+See [Index Mapper](#index-mapper) for more options use cases.
+
+Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
+It is possible to manipulate data using both Highland's method and Node-compatible streams.
+```js
+var JSONStream = require('JSONStream');
+
+roda('files').readStream({ prefix: '/foo/', limit: 3 })
+  .pluck('_id') //highland method
+  .pipe(JSONStream.stringify()) //Node transform stream
+  .pipe(process.stdout);
+
+/* possible output
+["/foo/", "/foo/abc", "/foo/bar"]
+*/
+```
+
 ####.liveStream()
-Obtain a never ending ReadStream of the Roda section for reading real-time changes of documents.
+Obtain a never ending ReadStream for reading real-time updates of documents.
+```js
+//receive updates of user age over 15
+roda('users').liveStream()
+  .filter(function(doc){
+    return doc.age > 15;
+  })
+  .each(console.log.bind(console))
+```
 
 ###Transaction
 Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
@@ -243,7 +264,7 @@ users.index('age', function(doc, emit){
   emit(doc.age); //can be non-unique
 });
 
-users.readStream({ index: 'age', gt: 15 }); //Stream users over age 15
+users.readStream({ index: 'age', gt: 15 }); //Stream users age over 15
 users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
 ```
 #####Mapping & filtering
