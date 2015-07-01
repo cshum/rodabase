@@ -679,6 +679,7 @@ test('Replication conflict detection', function(t){
   function conflict(ctx, next){
     //conflicted document post into c
     conflicts.post(ctx.conflict, ctx.transaction);
+    console.log(ctx.conflict, ctx.result);
     if(ctx.conflict._id === 'foo'){
       t.error('foo should not conflict');
       console.log('foo conflict', ctx.conflict, ctx.result);
