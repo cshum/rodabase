@@ -9,6 +9,8 @@ if(process.browser){
 var rodabase = require('../');
 
 var test = require('tape');
+var timestamp = require('../lib/timestamp');
+var codec = require('../lib/codec');
 var _ = require('underscore');
 var H = require('highland');
 
@@ -32,14 +34,14 @@ test('encode decode', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
-  var em = roda.util.encode(m);
+  var em = codec.encode(m);
 
   for(var i = 1; i < 1000; i++){
     var n = Math.random() * m;
-    var en = roda.util.encode(n);
+    var en = codec.encode(n);
 
     lex &= (n >= m && en >= em) || (n < m && en < em);
-    id &= n === roda.util.decode(en);
+    id &= n === codec.decode(en);
   }
   t.ok(lex, 'lexicographical');
   t.ok(id, 'identical');
@@ -50,29 +52,17 @@ test('encode decode number', function(t){
   var lex = true;
   var id = true;
   var m = 1000000;
-  var em = roda.util.encodeNumber(m, true);
+  var em = codec.encodeNumber(m, true);
 
   for(var i = 1; i < 1000; i++){
     var n = Math.random() * m;
-    var en = roda.util.encodeNumber(n);
+    var en = codec.encodeNumber(n);
 
     lex &= (n >= m && en >= em) || (n < m && en < em);
-    id &= n === roda.util.decodeNumber(en);
+    id &= n === codec.decodeNumber(en);
   }
   t.ok(lex, 'lexicographical');
   t.ok(id, 'identical');
-  t.end();
-});
-
-test('clocks', function(t){
-  var arr = ['01234567abc','12345678def','23456789ghi'];
-  var obj = {
-    '01234567':'abc',
-    '12345678':'def',
-    '23456789':'ghi'
-  };
-  t.deepEqual(roda.util.clocksObject(arr), obj, 'clocksObject');
-  t.deepEqual(roda.util.clocks(obj), arr, 'clocks');
   t.end();
 });
 
@@ -80,7 +70,7 @@ test('timestamp', function(t){
   var prev = 0;
   var ok = true;
   for(var i = 0, l = 1000; i < l; i++){
-    var time = roda.util.timestamp();
+    var time = timestamp();
     ok &= prev < time;
     prev = time;
   }
@@ -252,17 +242,17 @@ test('Transaction middleware: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('6').put(roda.util.encodeNumber(i), { i: i }, tx);
+    roda('6').put(codec.encodeNumber(i), { i: i }, tx);
 
   for(i = 0; i < n; i+=3)
-    roda('6').del(roda.util.encodeNumber(i), tx);
+    roda('6').del(codec.encodeNumber(i), tx);
 
-  roda('6').del(roda.util.encodeNumber(0), tx, function(err){
+  roda('6').del(codec.encodeNumber(0), tx, function(err){
     t.ok(err.notFound, 'notFound error for non-exists del');
   });
 
   for(i = 0; i < n; i+=2)
-    roda('6.1').del(roda.util.encodeNumber(i), tx);
+    roda('6.1').del(codec.encodeNumber(i), tx);
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
@@ -296,14 +286,14 @@ test('timeStream and trigger', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    api.put(roda.util.encodeNumber(i), { i: i }, tx);
+    api.put(codec.encodeNumber(i), { i: i }, tx);
   for(i = 0; i < n; i++)
-    api.put(roda.util.encodeNumber(i), { i: i }, tx); //redundant put
+    api.put(codec.encodeNumber(i), { i: i }, tx); //redundant put
 
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.encodeNumber(i), tx);
+    api.del(codec.encodeNumber(i), tx);
   for(i = 0; i < n; i+=3)
-    api.del(roda.util.encodeNumber(i), tx); //non-exist del
+    api.del(codec.encodeNumber(i), tx); //non-exist del
 
   tx.commit(function(err){
     t.notOk(err, 'commit success');
