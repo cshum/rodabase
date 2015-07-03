@@ -3,7 +3,7 @@
 Transactional, replicable document store for building microservices on Node.js and browsers. Based on [LevelDB](https://github.com/rvagg/node-levelup).
 * Stream and middleware based asynchronous API.
 * [Transaction](#transaction) guarantees linearizable local operations.
-* [Casual+ consistency](#replication) preserving replication mechanism.
+* [Causal+ consistent](#replication) multi master replication.
 * Storage backends: LevelDB on Node.js; IndexedDB on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
@@ -270,16 +270,21 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 
 Rodabase supports multi-master replication using vector clocks.
 
-Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under multi-master replication.
-But instead of  
-while providing replication mechanism that preserves **Casual+** - 
-casual consistency with convergent conflict handling.
-delays the replication until the casual ordering is statisifed. 
-loosely follows the **COPS** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
+Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under a multi-master environment.
+Many existing replication mechanism provides eventual consistency, which does not guarantee write ordering and unintuitive conflict resolution.
 
-Rodabase does not define any replication transport. Instead it contains the building blocks: 
-`.clockStream()`, `.changesStream()` and `.replicateStream()` - Node.js compatible "object streams"
-for wiring up the replications based on your application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
+Rodabase preserves **Causal+** - causal consistency with convergent conflict handling.
+This is achieved by 
+
+* Maintaining partial ordering using Lamport timestamp.
+* Keeping track nearest gets-from dependency.
+* Replication queue that commits write only when causal dependencies has been satisfied.
+
+The implementation loosely follows the **COPS** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
+
+Rodabase does not provide replication transport. 
+Instead it defines replication mechanism via Node.js object stream.
+Transports can be implemented based on application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
 
 ```js
 var a = roda('a');
@@ -306,7 +311,6 @@ Everytime a write operation is committed its logical clock is incremented.
 #### .replicateStream([options])
 
 Changes will be queued up until `_after` matches destination timestamp.
-
 
 ### Conflict Resolution
 
