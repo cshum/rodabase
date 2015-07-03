@@ -268,16 +268,16 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 ##### Prefixing
 ### Replication
 
-Rodabase supports multi-master replication using vector clocks.
+Rodabase supports multi-master replication.
 
-Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under a multi-master environment.
-Many existing replication mechanism provides eventual consistency, which does not guarantee write ordering and unintuitive conflict resolution.
+Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under replications.
+Many existing replication mechanism only satisfies eventual consistency, which does not enforce causal write ordering and non-intuitive conflict resolution.
 
 Rodabase preserves **Causal+** - causal consistency with convergent conflict handling.
 This is achieved by 
 
 * Maintaining partial ordering using Lamport timestamp.
-* Keeping track nearest gets-from dependency.
+* Keeping track of nearest gets-from dependency.
 * Replication queue that commits write only when causal dependencies has been satisfied.
 
 The implementation loosely follows the **COPS** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 

@@ -586,7 +586,7 @@ function sync(client, server){
     .pipe(client.replicateStream());
 }
 
-test('Replication casual ordering', function(t){
+test('Replication causal ordering', function(t){
   t.plan(6);
 
   function pipe(source, dest, delay){
@@ -651,7 +651,7 @@ test('Replication casual ordering', function(t){
     .each(function(rev){
       var mid = rev.slice(0,8);
       var time = rev.slice(8);
-      t.ok(!current[mid] || time > current[mid], 'casual ordering');
+      t.ok(!current[mid] || time > current[mid], 'causal ordering');
       current[mid] = time;
     });
 });
