@@ -1,4 +1,4 @@
-#Rodabase
+# Rodabase
 
 Transactional, replicable document store for building microservices on Node.js and browsers. Based on [LevelDB](https://github.com/rvagg/node-levelup).
 * Stream and middleware based asynchronous API.
@@ -12,7 +12,7 @@ Transactional, replicable document store for building microservices on Node.js a
 ```bash
 $ npm install rodabase
 ```
-## License
+### License
 
 MIT
 
@@ -41,7 +41,7 @@ MIT
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
-- [Conflict Resolution](#conflict-resolution)
+- [Conflict Handling](#conflict-handling)
   - [.use('conflict', [hook...])](#useconflict-hook)
 - [Timeline](#timeline)
   - [.timeStream([options])](#timestreamoptions)
@@ -266,6 +266,7 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 ```
 ##### Mapping & filtering
 ##### Prefixing
+
 ### Replication
 
 Rodabase supports multi-master replication.
@@ -276,43 +277,44 @@ Many existing replication mechanism only satisfies eventual consistency, which d
 Rodabase preserves **Causal+** - causal consistency with convergent conflict handling.
 This is achieved by 
 
-* Maintaining partial ordering using Lamport timestamp.
-* Keeping track of nearest gets-from dependency.
-* Replication queue that commits write only when causal dependencies has been satisfied.
+* Maintaining partial ordering using Lamport Clocks.
+* Keeping track of nearest gets-from dependency for each write.
+* Replication queue that commits write only when causal dependencies have been satisfied.
 
-The implementation loosely follows the **COPS** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
+The implementation loosely follows the **COPS-CD** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). As such, special fields are reserved of identifying states of documents:
 
-Rodabase does not provide replication transport. 
-Instead it defines replication mechanism via Node.js object stream.
+* `_rev` (revision) current revision of document that resembles a lamport clock. Consists of two parts: 
+  * `mid` - ID of `roda()` section.
+  * `seq` - lamport timestamp that increments based on casual dependencies.
+* `_from` (gets from) nearest gets-from dependency. Generated on write operation from a replicated document.
+* `_after` (write after) `seq` of previous local write for keeping track of execution order.
+
+Rodabase exposes replication mechanism as Node.js object stream.
 Transports can be implemented based on application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
 
-```js
-var a = roda('a');
-var b = roda('b');
 
+#### .clockStream()
+
+Readable stream of latest revisions i.e. lamport clocks of database section.
+
+#### .changesStream([options])
+
+Transform stream for querying changes from 
+```js
+b.clockStream().pipe(a.changesStream({ limit: 3 }));
+```
+
+#### .replicateStream([options])
+
+```js
 //a replicate to b
 b.clockStream()
   .pipe(a.changesStream({ live: true }))
   .pipe(b.replicateStream());
-
-//b replicate to a
-a.clockStream()
-  .pipe(b.changesStream({ live: true }))
-  .pipe(a.replicateStream());
 ```
 
-#### .clockStream()
 
-Readable stream for [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps) of the Roda.
-Everytime a write operation is committed its logical clock is incremented.
-
-#### .changesStream([options])
-
-#### .replicateStream([options])
-
-Changes will be queued up until `_after` matches destination timestamp.
-
-### Conflict Resolution
+### Conflict Handling
 
 #### .use('conflict', [hook...])
 
