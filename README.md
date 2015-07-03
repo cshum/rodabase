@@ -1,6 +1,6 @@
 #Rodabase
 
-Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
+Transactional, replicable document store for building microservices on Node.js and browsers. Based on [LevelDB](https://github.com/rvagg/node-levelup).
 * Stream and middleware based asynchronous API.
 * [Transaction](#transaction) guarantees linearizable local operations.
 * [Casual+ consistency](#replication) preserving replication mechanism.
@@ -10,31 +10,21 @@ Transactional, replicable document store for Node.js and browsers. Built on [Lev
 [![Coverage Status](https://coveralls.io/repos/cshum/rodabase/badge.svg?branch=master)](https://coveralls.io/r/cshum/rodabase?branch=master)
 
 ```bash
-$ npm install rodabase leveldown@0.10
+$ npm install rodabase
 ```
-[LevelDOWN](https://github.com/rvagg/node-leveldown) is the default backend store for LevelDB. 
+## License
 
-**License** MIT
+MIT
 
-##API
-###rodabase(path, [options])
-
-```js
-var rodabase = require('rodabase');
-
-var roda = rodabase('./db');
-```
-
-###roda(name)
-
-All operations are asynchronous although they don't necessarily require a callback.
+## API
 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
  
 
-- [CRUD](#crud)
+- [rodabase(path, [options])](#rodabasepath-options)
+- [roda(name)](#rodaname)
   - [.put(id, doc, [tx], [cb])](#putid-doc-tx-cb)
   - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
@@ -59,8 +49,15 @@ All operations are asynchronous although they don't necessarily require a callba
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-###CRUD
-####.put(id, doc, [tx], [cb])
+### rodabase(path, [options])
+
+```js
+var rodabase = require('rodabase');
+
+var roda = rodabase('./db');
+```
+### roda(name)
+#### .put(id, doc, [tx], [cb])
 Create a new document or update an existing document `doc` by specifying `id`.
 
 Optionally bind to a [transaction](#transaction) instance `tx`.
@@ -76,7 +73,7 @@ roda('users').put('bob', { foo: 'bar' }, function(err, doc){
   */
 });
 ```
-####.post(doc, [tx], [cb])
+#### .post(doc, [tx], [cb])
 Create a new document `doc` with an auto-generated `_id`.
 Auto generated _id is a unique, URL-safe, time sorted string.
 
@@ -93,7 +90,7 @@ roda('users').post({ foo: 'bar' }, function(err, doc){
 });
 ```
 
-####.get(id, [tx], [cb])
+#### .get(id, [tx], [cb])
 Retrieve a document specified by `id`. If document not exists, callback with `notFound` error.
 
 Optionally bind to a [transaction](#transaction) instance `tx`.
@@ -111,12 +108,12 @@ roda('users').get('bob', function(err, doc){
 });
 ```
 
-####.del(id, [tx], [cb])
+#### .del(id, [tx], [cb])
 Delete a document specified by `id`. If document not exists, callback with `notFound` error.
 
 Optional [transaction](#transaction) instance `tx`.
 
-####.readStream([options])
+#### .readStream([options])
 Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
 You can specify range options control the range of documents that are streamed. 
 
@@ -145,7 +142,7 @@ roda('files').readStream({ prefix: '/foo/', limit: 3 })
 */
 ```
 
-####.liveStream()
+#### .liveStream()
 Obtain a never ending ReadStream for reading real-time updates of documents.
 ```js
 //receive updates of user age over 15
@@ -156,13 +153,13 @@ roda('users').liveStream()
   .each(console.log.bind(console))
 ```
 
-###Transaction
+### Transaction
 Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
 
 To make this works, LevelDB and IndexedDB both support atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
 Rodabase takes a step further to support two-phase locking and snapshot isolation:
 
-####roda.transaction()
+#### roda.transaction()
 
 Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
 ```js
@@ -250,9 +247,9 @@ tx.commit(function(){
 });
 ```
 
-###Index Mapper
-####.index(name, mapper)
-#####Secondary index
+### Index Mapper
+#### .index(name, mapper)
+##### Secondary index
 
 ```js
 var users = roda('users');
@@ -267,15 +264,18 @@ users.index('age', function(doc, emit){
 users.readStream({ index: 'age', gt: 15 }); //Stream users age over 15
 users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
 ```
-#####Mapping & filtering
-#####Prefixing
-###Replication
+##### Mapping & filtering
+##### Prefixing
+### Replication
 
-Base on the CAP theorem, it is impossible to create a system that has strong consistency, is always available for reads and writes, and is able to continue operating during network partitions. Each of these properties is highly desirable. 
+Rodabase supports multi-master replication using vector clocks.
 
-Rodabase supports strong consistency for local operations with [transactions](#transaction), 
-while providing replication mechanism that preserves "Casual+" - 
-casual consistency with convergent conflict handling, following the design and implementation of [COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
+Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under multi-master replication.
+But instead of  
+while providing replication mechanism that preserves **Casual+** - 
+casual consistency with convergent conflict handling.
+delays the replication until the casual ordering is statisifed. 
+loosely follows the **COPS** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). 
 
 Rodabase does not define any replication transport. Instead it contains the building blocks: 
 `.clockStream()`, `.changesStream()` and `.replicateStream()` - Node.js compatible "object streams"
@@ -296,24 +296,25 @@ a.clockStream()
   .pipe(a.replicateStream());
 ```
 
-####.clockStream()
+#### .clockStream()
 
 Readable stream for [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps) of the Roda.
 Everytime a write operation is committed its logical clock is incremented.
 
-####.changesStream([options])
+#### .changesStream([options])
 
-####.replicateStream([options])
+#### .replicateStream([options])
 
 Changes will be queued up until `_after` matches destination timestamp.
 
 
-###Conflict Resolution
+### Conflict Resolution
 
-####.use('conflict', [hook...])
+#### .use('conflict', [hook...])
 
-###Timeline
+### Timeline
 
-####.timeStream([options])
+#### .timeStream([options])
 
-####.trigger(job, [options])
+#### .trigger(job, [options])
+
