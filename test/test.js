@@ -659,7 +659,7 @@ test('Replication causal ordering', function(t){
 });
 
 test('Replication conflict detection', function(t){
-  t.plan(8);
+  t.plan(10);
 
   var server = roda('serverC');
   var server2 = roda('serverC2');
@@ -718,6 +718,10 @@ test('Replication conflict detection', function(t){
               data._from, bFrom, 
               'B gets from A no conflict'
             );
+            t.ok(
+              codec.seqKey(data._rev) > codec.seqKey(bFrom), 
+              'B gets from A ordering'
+            );
             var cFrom = data._rev;
             var tx = roda.transaction();
             c.put('foo', {bar: 'whatever'}, tx); //local op
@@ -728,6 +732,10 @@ test('Replication conflict detection', function(t){
                 t.equal(
                   data._from, cFrom, 
                   'C gets from B no conflict'
+                );
+                t.ok(
+                  codec.seqKey(data._rev) > codec.seqKey(cFrom), 
+                  'C gets from B ordering'
                 );
               });
             }, 1000);
