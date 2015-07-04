@@ -150,7 +150,9 @@ test('Transaction: isolation', function(t){
 
 test('Transactional CRUD', function(t){
   var api = roda('crud');
-  t.plan(12);
+  t.plan(13);
+
+  t.equal(api.name(), 'crud', 'name()');
 
   api.create('asdf',{'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'create');
