@@ -186,9 +186,9 @@ test('Transactional CRUD', function(t){
       t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
     });
-    api.get('bla', true, function(err, val){
-      t.notOk(err, 'no err.notFound with deleted option');
-      t.ok(val._deleted, 'val deleted');
+    api.get('bla', true, function(err, state){
+      t.notOk(err, 'no err.notFound with state');
+      t.ok(state.snapshot._deleted, 'val deleted');
     });
   });
 
