@@ -659,7 +659,7 @@ test('Replication causal ordering', function(t){
 });
 
 test('Replication conflict detection', function(t){
-  t.plan(10);
+  t.plan(6);
 
   var server = roda('serverC');
   var server2 = roda('serverC2');
@@ -671,10 +671,6 @@ test('Replication conflict detection', function(t){
   function conflict(ctx, next){
     //conflicted document post into c
     conflicts.post(ctx.conflict, ctx.transaction);
-    if(ctx.conflict._id === 'foo'){
-      t.error('foo should not conflict');
-      console.log('foo conflict', ctx.conflict, ctx.result);
-    }
     next();
   }
   server.use('conflict', conflict);
@@ -702,46 +698,6 @@ test('Replication conflict detection', function(t){
       b.readStream().toArray(read);
       c.readStream().toArray(read);
 
-      //get from, should not conflict
-      var tx = roda.transaction();
-      a.put('foo',{a:'a'}, tx);
-      tx.commit();
-      b.liveStream().pull(function(err, data){
-        var bFrom = data._rev;
-        var tx = roda.transaction();
-        b.del('foo', tx); //local op
-        b.put('foo',{b:'b'}, tx);
-        tx.commit();
-        setTimeout(function(){
-          c.get('foo', function(err, data){
-            t.equal(
-              data._from, bFrom, 
-              'B gets from A no conflict'
-            );
-            t.ok(
-              codec.seqKey(data._rev) > codec.seqKey(bFrom), 
-              'B gets from A ordering'
-            );
-            var cFrom = data._rev;
-            var tx = roda.transaction();
-            c.put('foo', {bar: 'whatever'}, tx); //local op
-            c.put('foo', {c:'c'}, tx);
-            tx.commit();
-            setTimeout(function(){
-              a.get('foo', function(err, data){
-                t.equal(
-                  data._from, cFrom, 
-                  'C gets from B no conflict'
-                );
-                t.ok(
-                  codec.seqKey(data._rev) > codec.seqKey(cFrom), 
-                  'C gets from B ordering'
-                );
-              });
-            }, 1000);
-          });
-        }, 1000);
-      });
     }, 3000);
 
   });
@@ -762,3 +718,64 @@ test('Replication conflict detection', function(t){
   });
 });
 
+test('gets from dependencies', function(t){
+  t.plan(4);
+  var server = roda('serverC');
+  var server2 = roda('serverC2');
+  var a = roda('a5');
+  var b = roda('b5');
+  var c = roda('c5');
+  var conflicts = roda('conflicts5');
+
+  function conflict(ctx, next){
+    //conflicted document post into c
+    if(ctx.conflict._id === 'foo'){
+      t.error('foo should not conflict');
+      console.log('foo conflict', ctx.conflict, ctx.result);
+    }
+    next();
+  }
+  server.use('conflict', conflict);
+  server2.use('conflict', conflict);
+
+  //get from, should not conflict
+  var tx = roda.transaction();
+  a.put('foo',{a:'a'}, tx);
+  tx.commit();
+  b.liveStream().pull(function(err, data){
+    var bFrom = data._rev;
+    var tx = roda.transaction();
+    b.del('foo', tx); //local op
+    b.put('foo',{b:'b'}, tx);
+    tx.commit();
+    setTimeout(function(){
+      c.get('foo', function(err, data){
+        t.equal(
+          data._from, bFrom, 
+          'B gets from A no conflict'
+        );
+        t.ok(
+          codec.seqKey(data._rev) > codec.seqKey(bFrom), 
+          'B gets from A ordering'
+        );
+        var cFrom = data._rev;
+        var tx = roda.transaction();
+        c.put('foo', {bar: 'whatever'}, tx); //local op
+        c.put('foo', {c:'c'}, tx);
+        tx.commit();
+        setTimeout(function(){
+          a.get('foo', function(err, data){
+            t.equal(
+              data._from, cFrom, 
+              'C gets from B no conflict'
+            );
+            t.ok(
+              codec.seqKey(data._rev) > codec.seqKey(cFrom), 
+              'C gets from B ordering'
+            );
+          });
+        }, 1000);
+      });
+    }, 1000);
+  });
+});
