@@ -269,17 +269,14 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 
 ### Replication
 
-Rodabase supports multi-master replication.
-Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under replications.
+Rodabase supports multi-master replication that preserves **Causal+** - causal consistency with convergent conflict handling.
+The implementation loosely follows the **COPS-CD** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/docs/cops-sosp11.pdf). 
 
-Rodabase replication mechanism preserves **Causal+** - causal consistency with convergent conflict handling.
-This is achieved by 
-
-* Maintaining partial ordering using Lamport Clocks.
+* Maintaining partial ordering that respects potential causality, using Lamport clocks.
 * Keeping track of nearest gets-from dependency for each write.
 * Replication queue that commits write only when causal dependencies have been satisfied.
 
-The implementation loosely follows the **COPS-CD** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/docs/cops-sosp11.pdf). As such, special fields are reserved of identifying states of documents:
+Special fields are reserved of identifying states of documents:
 
 * `_rev` (revision) current revision of document that resembles a lamport clock. Consists of two parts: 
   * `mid` - ID of `roda()` section.
