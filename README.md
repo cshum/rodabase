@@ -270,18 +270,16 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 ### Replication
 
 Rodabase supports multi-master replication.
-
 Linearizable consistency can be achieved using [Transaction](#transaction) for local operations, but this is impossible under replications.
-Many existing replication mechanism only satisfies eventual consistency, which does not enforce causal write ordering and non-intuitive conflict resolution.
 
-Rodabase preserves **Causal+** - causal consistency with convergent conflict handling.
+Rodabase replication mechanism preserves **Causal+** - causal consistency with convergent conflict handling.
 This is achieved by 
 
 * Maintaining partial ordering using Lamport Clocks.
 * Keeping track of nearest gets-from dependency for each write.
 * Replication queue that commits write only when causal dependencies have been satisfied.
 
-The implementation loosely follows the **COPS-CD** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/projects/cops-and-eiger/). As such, special fields are reserved of identifying states of documents:
+The implementation loosely follows the **COPS-CD** approach as presented in the article: [Don’t Settle for Eventual: Scalable Causal Consistency for Wide-Area Storage with COPS](http://sns.cs.princeton.edu/docs/cops-sosp11.pdf). As such, special fields are reserved of identifying states of documents:
 
 * `_rev` (revision) current revision of document that resembles a lamport clock. Consists of two parts: 
   * `mid` - ID of `roda()` section.
@@ -289,9 +287,8 @@ The implementation loosely follows the **COPS-CD** approach as presented in the 
 * `_from` (gets from) nearest gets-from dependency. Generated on write operation from a replicated document.
 * `_after` (write after) `seq` of previous local write for keeping track of execution order.
 
-Rodabase exposes replication mechanism as Node.js object stream.
+Rodabase exposes replication mechanism as Node.js object streams.
 Transports can be implemented based on application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
-
 
 #### .clockStream()
 
@@ -312,7 +309,6 @@ b.clockStream()
   .pipe(a.changesStream({ live: true }))
   .pipe(b.replicateStream());
 ```
-
 
 ### Conflict Handling
 
