@@ -21,15 +21,14 @@
   "author": "Adrian C Shum <adrian@cshum.com>",
   "license": "MIT",
   "dependencies": {
-    "bytewise": "^0.7.1",
+    "bytewise-core": "^1.2.3",
     "d64": "^1.0.0",
     "extend": "^2.0.1",
     "ginga": "^0.1.7",
     "highland": "^2.5.1",
-    "levelup": "^1.2.1",
     "level-js": "^2.1.6",
     "level-transactions": "^0.5.1",
-    "object-is": "^1.0.1",
+    "levelup": "^1.2.1",
     "randombytes": "^2.0.1"
   },
   "devDependencies": {
