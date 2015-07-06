@@ -1,6 +1,6 @@
 # Rodabase
 
-Transactional, replicable document store for building microservices on Node.js and browsers. Based on [LevelDB](https://github.com/rvagg/node-levelup).
+Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
 * Stream and middleware based asynchronous API.
 * [Transaction](#transaction) guarantees linearizable local operations.
 * [Causal+ consistent](#replication) multi master replication.
@@ -65,13 +65,12 @@ Optionally bind to a [transaction](#transaction) instance `tx`.
 
 ```js
 roda('users').put('bob', { foo: 'bar' }, function(err, doc){
-  /* example doc
+  //example doc
   { 
     "_id": "bob",
     "foo": "bar", 
     "_rev": "5U42CUvHEz"
   }
-  */
 });
 ```
 #### .post(doc, [tx], [cb])
@@ -81,13 +80,12 @@ Auto generated _id is a unique, URL-safe, time sorted string.
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').post({ foo: 'bar' }, function(err, doc){
-  /* example doc
+  //example doc
   { 
     "_id": "FZBJIBTCaEJk8924J0A",
     "foo": "bar", 
     "_rev": "5U42CUvHF"
   }
-  */
 });
 ```
 
@@ -138,9 +136,8 @@ roda('files').readStream({ prefix: '/foo/', limit: 3 })
   .pipe(JSONStream.stringify()) //Node transform stream
   .pipe(process.stdout);
 
-/* possible output
+//possible output
 ["/foo/", "/foo/abc", "/foo/bar"]
-*/
 ```
 
 #### .liveStream()
@@ -243,7 +240,8 @@ count.del('bob', tx);
 
 tx.commit(function(){
   delta.readStream().pluck('delta').toArray(function(data){
-    console.log(data); //[6, 2, -8]
+    //data
+    [6, 2, -8]
   });
 });
 ```
@@ -276,11 +274,6 @@ Indexes need to be rebuilt when `registerIndex()` *after* a document is committe
 `rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
 
 ```js
-//users have been added. Now I wanna register `random` index
-users.registerIndex('random', function(doc, emit){
-  emit(Math.random());
-});
-
 users.rebuildIndex('1.1', function(err){
   //if no error, indexes 1.1 rebuilt successfully.
 });
@@ -322,13 +315,11 @@ b.clockStream()
   .pipe(b.replicateStream());
 ```
 
-### Conflict Handling
-
 #### .use('conflict', [hook...])
 
-### Timeline
+### History
 
-#### .timeStream([options])
+#### .historyStream([options])
 
 #### .trigger(job, [options])
 
