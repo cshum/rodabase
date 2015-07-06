@@ -378,7 +378,7 @@ test('liveStream timeStream trigger', function(t){
 });
 
 
-test('Index mapper and range', function(t){
+test('Index and range', function(t){
   t.plan(20 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
@@ -391,13 +391,13 @@ test('Index mapper and range', function(t){
       ctx.result.gender = ctx.result.gender.toUpperCase();
     next();
   })
-  .index('email', function(doc, emit){
+  .registerIndex('email', function(doc, emit){
     emit(doc.email, true);
   })
-  .index('age', function(doc, emit){
+  .registerIndex('age', function(doc, emit){
     emit(doc.age);
   })
-  .index('gender_age', function(doc, emit){
+  .registerIndex('gender_age', function(doc, emit){
     if(doc.gender)
       emit([doc.gender, doc.age]);
   })
