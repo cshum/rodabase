@@ -186,7 +186,7 @@ Rodabase uses [middleware](https://github.com/cshum/ginga#middleware),
 with `validate` and `diff` hooks invoked on every write operations of both local and replicated documents. 
 These keep track of document changes and integrity check, in a transactional manner.
 
-####.use('validate', [hook...])
+#### .use('validate', [hook...])
 `validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
 
 Context object consists of the following properties:
@@ -212,7 +212,7 @@ people.post({ name: 'bar' }, function(err, val){
 });
 ```
 
-####.use('diff', [hook...])
+#### .use('diff', [hook...])
 `diff` invoked when document is locked.
 Current and resulting state of the document can be accessed 
 for additional log, diff related operations.
@@ -304,19 +304,14 @@ Special fields are reserved of identifying states of documents:
 * `_from` (gets from) nearest gets-from dependency. Generated on write operation from a replicated document.
 * `_after` (write after) `seq` of previous local write for keeping track of execution order.
 
-Rodabase exposes replication mechanism as Node.js object streams.
-Transports can be implemented based on application needs, such as [socket.io transport](https://github.com/cshum/roda-replicate-socketio) for realtime changing documents.
+Rodabase exposes replication mechanism as Node.js stream, which is transport-agnostic:
+* [roda-socket.io](https://github.com/cshum/roda-socket.io) - Socket.IO transport.
 
 #### .clockStream()
 
 Readable stream of latest revisions i.e. lamport clocks of database section.
 
 #### .changesStream([options])
-
-Transform stream for querying changes from 
-```js
-b.clockStream().pipe(a.changesStream({ limit: 3 }));
-```
 
 #### .replicateStream([options])
 
