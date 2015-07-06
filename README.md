@@ -42,10 +42,9 @@ MIT
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
-- [Conflict Handling](#conflict-handling)
   - [.use('conflict', [hook...])](#useconflict-hook)
-- [Timeline](#timeline)
-  - [.timeStream([options])](#timestreamoptions)
+- [History](#history)
+  - [.historyStream([options])](#historystreamoptions)
   - [.trigger(job, [options])](#triggerjob-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -126,36 +125,45 @@ Optional `options` object with the following options:
 
 See [Index Mapper](#index-mapper) for more options use cases.
 
-Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
-It is possible to manipulate data using both Highland's method and Node-compatible streams.
 ```js
 var JSONStream = require('JSONStream');
 
-roda('files').readStream({ prefix: '/foo/', limit: 3 })
-  .pluck('_id') //highland method
-  .pipe(JSONStream.stringify()) //Node transform stream
+roda('files').readStream({ prefix: '/foo/' })
+  .pipe(JSONStream.stringify()) //Transform stream
   .pipe(process.stdout);
 
-//possible output
-["/foo/", "/foo/abc", "/foo/bar"]
+//example output
+[{
+  "_id": "/foo/bar",
+  "_rev": "5U42CUvHEz",
+  ...
+},{
+  "_id": "/foo/boo",
+  "_rev": "5U42CUvHF",
+  ...
+},...]
 ```
 
 #### .liveStream()
 Obtain a never ending ReadStream for reading real-time updates of documents.
+
+Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
+
 ```js
-//receive updates of user age over 15
 roda('users').liveStream()
   .filter(function(doc){
     return doc.age > 15;
   })
-  .each(console.log.bind(console))
+  .each(function(doc){
+    //receive live updates of user age over 15
+  })
 ```
 
 ### Transaction
 Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
 
 To make this works, LevelDB and IndexedDB both support atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
-Rodabase takes a step further to support two-phase locking and snapshot isolation:
+Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation support.
 
 #### roda.transaction()
 
@@ -179,9 +187,8 @@ tx.commit(function(err){
 });
 ```
 
-Rodabase uses [middleware](https://github.com/cshum/ginga#middleware), 
-with `validate` and `diff` hooks invoked on every write operations of both local and replicated documents. 
-These keep track of document changes and integrity check, in a transactional manner.
+Rodabase supports [middleware hooks](https://github.com/cshum/ginga#middleware), 
+with `validate` and `diff` invoked on every write operations transactionally. 
 
 #### .use('validate', [hook...])
 `validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
@@ -248,7 +255,7 @@ tx.commit(function(){
 
 ### Index
 #### .registerIndex(name, mapper)
-Indexes are created and deleted transactionally on write.
+Indexes are generated or cleaned up transactionally on every write operations.
 ##### Secondary index
 
 ```js
