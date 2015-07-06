@@ -379,7 +379,7 @@ test('liveStream historyStream trigger', function(t){
 
 
 test('Index and range', function(t){
-  t.plan(20 + 30);
+  t.plan(22 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -396,6 +396,9 @@ test('Index and range', function(t){
   })
   .registerIndex('age', function(doc, emit){
     emit(doc.age);
+  })
+  .registerIndex('foo', function(doc, emit){
+    emit(doc.email, {foo:'bar'}, true);
   })
   .registerIndex('gender_age', function(doc, emit){
     if(doc.gender)
@@ -448,6 +451,10 @@ test('Index and range', function(t){
             'foo@bar.com',
           ], 'Email read by order');
         });
+      users.readStream({index: 'foo'}).pull(function(err, item){
+        t.equal(item._key, 'adrian@cshum.com', 'Email Key');
+        t.equal(item.foo, 'bar', 'custom field');
+      });
       users.readStream({index: 'email', eq:'foo@bar.com' })
         .pluck('email').toArray(function(list){
           t.deepEqual(list, ['foo@bar.com'], 'index eq');
@@ -519,6 +526,37 @@ test('Index and range', function(t){
         .pluck('email').toArray(function(list){
           t.deepEqual(list, ['hello@world.com'], 'Male age 15');
         });
+    });
+  });
+});
+
+test('Rebuild Index', function(t){
+  t.plan(6);
+  var users = roda('users');
+
+  users.liveStream().each(function(){
+    t.error('Should not invoke write');
+  });
+  users.registerIndex('random', function(doc, emit){
+    emit(Math.random());
+  });
+  users.rebuildIndex(function(err){
+    t.notOk(err, 'rebuild no error');
+    users.readStream({ index:'random' }).toArray(function(list){
+      t.equal(list.length, 3, 'Index rebuilt');
+      users.registerIndex('random2', function(doc, emit){
+        emit(Math.random());
+      });
+      users.rebuildIndex('random2', function(err){
+        t.notOk(err, 'rebuild no error');
+        users.readStream({ index:'random2' }).toArray(function(list){
+          t.equal(list.length, 3, 'Index rebuilt');
+        });
+        users.rebuildIndex('random2', function(err, cached){
+          t.notOk(err, 'rebuild no error');
+          t.ok(cached, 'cached index rebuild tag');
+        });
+      });
     });
   });
 });
