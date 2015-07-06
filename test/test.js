@@ -262,26 +262,26 @@ test('Transaction middleware: diff', function(t){
     roda('6').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('6').timeStream().toArray(function(list){
+    roda('6').historyStream().toArray(function(list){
       t.equal(list.length, n, 'time n length');
     });
     roda('6.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.1').timeStream().toArray(function(list){
+    roda('6.1').historyStream().toArray(function(list){
       t.equal(list.length, n, 'hook time n length');
     });
     roda('6.2').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.2').timeStream().toArray(function(list){
+    roda('6.2').historyStream().toArray(function(list){
       t.equal(list.length, n, 'hook time n length');
     });
   });
 
 });
 
-test('timeStream and trigger', function(t){
+test('historyStream and trigger', function(t){
   t.plan(7);
   var api = roda('4');
   var tx = roda.transaction();
@@ -303,9 +303,9 @@ test('timeStream and trigger', function(t){
     api.readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    api.timeStream().toArray(function(list){
-      t.equal(list.length, n, 'timeStream n length');
-      t.deepEqual(_.sortBy(_.shuffle(list), '_time'), list, '_time incremental');
+    api.historyStream().toArray(function(list){
+      t.equal(list.length, n, 'historyStream n length');
+      t.deepEqual(_.sortBy(_.shuffle(list), '_key'), list, '_key incremental');
 
       var linear = [];
       var parallel = [];
@@ -340,7 +340,7 @@ test('timeStream and trigger', function(t){
   });
 });
 
-test('liveStream timeStream trigger', function(t){
+test('liveStream historyStream trigger', function(t){
   t.plan(3);
   var api = roda('4');
   var m = 17;
@@ -351,10 +351,10 @@ test('liveStream timeStream trigger', function(t){
       t.equal(data.m, m - 1, 'liveStream tail');
     });
 
-  api.timeStream({ live: true })
+  api.historyStream({ live: true })
     .drop(n + m - 1)
     .pull(function(err, data){
-      t.equal(data.m, m - 1, 'live timeStream tail');
+      t.equal(data.m, m - 1, 'live historyStream tail');
     });
 
   //destroy trigger instance to test durability
