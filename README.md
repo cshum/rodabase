@@ -35,8 +35,9 @@ MIT
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-- [Index Mapper](#index-mapper)
-  - [.index(name, mapper)](#indexname-mapper)
+- [Index](#index)
+  - [.registerIndex(name, mapper)](#registerindexname-mapper)
+  - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
 - [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
@@ -247,17 +248,18 @@ tx.commit(function(){
 });
 ```
 
-### Index Mapper
-#### .index(name, mapper)
+### Index
+#### .registerIndex(name, mapper)
+Indexes are created and deleted transactionally on write.
 ##### Secondary index
 
 ```js
 var users = roda('users');
 
-users.index('email', function(doc, emit){
+users.registerIndex('email', function(doc, emit){
   emit(doc.email, true); //unique
 });
-users.index('age', function(doc, emit){
+users.registerIndex('age', function(doc, emit){
   emit(doc.age); //can be non-unique
 });
 
@@ -266,6 +268,24 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 ```
 ##### Mapping & filtering
 ##### Prefixing
+
+#### .rebuildIndex([tag], [cb])
+
+Indexes need to be rebuilt when `registerIndex()` *after* a document is committed, or when `mapper` function has changed.
+
+`rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
+
+```js
+//users have been added. Now I wanna register `random` index
+users.registerIndex('random', function(doc, emit){
+  emit(Math.random());
+});
+
+users.rebuildIndex('1.1', function(err){
+  //if no error, indexes 1.1 rebuilt successfully.
+});
+
+```
 
 ### Replication
 
