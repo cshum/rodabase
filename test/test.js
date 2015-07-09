@@ -531,7 +531,7 @@ test('Index and range', function(t){
 });
 
 test('Rebuild Index', function(t){
-  t.plan(6);
+  t.plan(4);
   var users = roda('users');
 
   users.liveStream().each(function(){
@@ -541,14 +541,12 @@ test('Rebuild Index', function(t){
     emit(Math.random());
   });
   users.rebuildIndex(function(err){
-    t.notOk(err, 'rebuild no error');
     users.readStream({ index:'random' }).toArray(function(list){
       t.equal(list.length, 3, 'Index rebuilt');
       users.registerIndex('random2', function(doc, emit){
         emit(Math.random());
       });
       users.rebuildIndex('random2', function(err){
-        t.notOk(err, 'rebuild no error');
         users.readStream({ index:'random2' }).toArray(function(list){
           t.equal(list.length, 3, 'Index rebuilt');
         });
