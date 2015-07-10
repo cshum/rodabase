@@ -4,6 +4,6 @@ node_js:
   - "0.11"
   - "0.10"
 
-script: "npm run coverage"
+script: "npm run test-coverage"
 after_script:
   - "if [[ `node --version` == *v0.12* ]]; then cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js; fi"
