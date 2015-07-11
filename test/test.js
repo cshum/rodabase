@@ -223,22 +223,20 @@ test('Transaction middleware: Validate', function(t){
 
 test('Transaction middleware: diff', function(t){
   t.plan(8);
-  roda('6').use('diff', function(ctx, next){
+  roda('6').use('diff', function(ctx){
     if(!ctx.result._deleted){
       roda('6.1').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
     }
-    next();
   });
-  roda('6.1').use('diff', function(ctx, next){
+  roda('6.1').use('diff', function(ctx){
     if(!ctx.result._deleted)
       roda('6.2').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
     else
       roda('6.2').del(ctx.current._id, ctx.transaction);
-    next();
   });
   var tx = roda.transaction();
   var i;

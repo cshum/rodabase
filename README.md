@@ -230,14 +230,12 @@ Context object consists of the following properties:
 var count = roda('count');
 var delta = roda('delta');
 
-count.use('diff', function(ctx, next){
+count.use('diff', function(ctx){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result.n || 0;
 
   //Transaction works across sections
   delta.post({ delta: to - from }, ctx.transaction);
-
-  next();
 });
 
 var tx = Roda.transaction();
