@@ -1,10 +1,10 @@
 # Rodabase
 
-Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/rvagg/node-levelup).
-* Stream and middleware based asynchronous API.
+Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/Level/levelup).
+* [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
 * [Transaction](#transaction) guarantees linearizable local operations.
 * [Causal+ consistent](#replication) multi master replication.
-* Storage backends: LevelDB on Node.js; IndexedDB on browser.
+* Storage backends: [LevelDB](https://github.com/Level/levelup) on Node.js; IndexedDB on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
 [![Coverage Status](https://coveralls.io/repos/cshum/rodabase/badge.svg?branch=master)](https://coveralls.io/r/cshum/rodabase?branch=master)
@@ -162,8 +162,8 @@ roda('users').liveStream()
 ### Transaction
 Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
 
-To make this works, LevelDB and IndexedDB both support atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
-Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation support.
+LevelDB supports atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
+Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation.
 
 #### roda.transaction()
 
@@ -235,7 +235,7 @@ count.use('diff', function(ctx, next){
   var to = ctx.result.n || 0;
 
   //Transaction works across sections
-  delta.put({ delta: to - from }, ctx.transaction);
+  delta.post({ delta: to - from }, ctx.transaction);
 
   next();
 });
@@ -281,8 +281,8 @@ Indexes need to be rebuilt when `registerIndex()` *after* a document is committe
 `rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
 
 ```js
-users.rebuildIndex('1.1', function(err){
-  //if no error, indexes 1.1 rebuilt successfully.
+users.rebuildIndex('1.1', function(){
+  //indexes 1.1 rebuilt successfully.
 });
 
 ```
