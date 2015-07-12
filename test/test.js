@@ -150,7 +150,7 @@ test('Transaction: isolation', function(t){
 
 test('Transactional CRUD', function(t){
   var api = roda('crud');
-  t.plan(13);
+  t.plan(15);
 
   t.equal(api.name(), 'crud', 'name()');
 
@@ -158,6 +158,9 @@ test('Transactional CRUD', function(t){
     t.equal(val.foo, 'bar', 'create');
     api.create('asdf',{'foo':'bla'}, function(err, val){
       t.ok(err.exists, 'create error if exists');
+    });
+    api.find('asdf', function(err, val){
+      t.equal(val.foo, 'bar', 'find id');
     });
   });
   api.post({'foo':'bar'}, function(err, val){
@@ -185,6 +188,9 @@ test('Transactional CRUD', function(t){
     api.get('bla', function(err, val){
       t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
+    });
+    api.find('bla', function(err, val){
+      t.ok(err.notFound, 'notFound error for non exists find');
     });
     api.get('bla', true, function(err, state){
       t.notOk(err, 'no err.notFound with state');
@@ -377,7 +383,7 @@ test('liveStream historyStream trigger', function(t){
 
 
 test('Index and range', function(t){
-  t.plan(22 + 30);
+  t.plan(24 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -461,6 +467,12 @@ test('Index and range', function(t){
         .pluck('email').toArray(function(list){
           t.deepEqual(list, [], 'index prefix not eq ');
         });
+      users.find('foo@bar.com', 'email', function(err, val){
+        t.equal(val.email, 'foo@bar.com', 'find index');
+      });
+      users.find('foo@bar.co', 'email', function(err, val){
+        t.ok(err.notFound, 'index notFound');
+      });
       users.readStream({index: 'email', prefix:'foo@bar.co' })
         .pluck('email').toArray(function(list){
           t.deepEqual(list, ['foo@bar.com'], 'index string prefix');
