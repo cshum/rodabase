@@ -32,7 +32,6 @@ MIT
 - [Index](#index)
   - [.registerIndex(name, mapper)](#registerindexname-mapper)
   - [.readStream([options])](#readstreamoptions)
-  - [.find(key, [index], [cb])](#findkey-index-cb)
   - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
@@ -166,8 +165,6 @@ users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of e
 ```
 ##### Mapping & filtering
 ##### Prefixing
-
-#### .find(key, [index], [cb])
 
 #### .rebuildIndex([tag], [cb])
 
