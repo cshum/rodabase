@@ -21,7 +21,7 @@ MIT
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
- 
+##API
 
 - [rodabase(path, [options])](#rodabasepath-options)
 - [roda(name)](#rodaname)
@@ -29,23 +29,24 @@ MIT
   - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
+- [Index](#index)
+  - [.registerIndex(name, mapper)](#registerindexname-mapper)
   - [.readStream([options])](#readstreamoptions)
-  - [.liveStream()](#livestream)
+  - [.find(key, [index], [cb])](#findkey-index-cb)
+  - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
 - [Transaction](#transaction)
   - [roda.transaction()](#rodatransaction)
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
-- [Index](#index)
-  - [.registerIndex(name, mapper)](#registerindexname-mapper)
-  - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
 - [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
   - [.use('conflict', [hook...])](#useconflict-hook)
-- [History](#history)
+- [Timeline](#timeline)
+  - [.liveStream()](#livestream)
   - [.historyStream([options])](#historystreamoptions)
-  - [.trigger(job, [options])](#triggerjob-options)
+  - [.trigger(name, job, [options])](#triggername-job-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -111,6 +112,10 @@ Delete a document specified by `id`. If document not exists, callback with `notF
 
 Optional [transaction](#transaction) instance `tx`.
 
+### Index
+#### .registerIndex(name, mapper)
+Indexes are generated or cleaned up transactionally on every write operations.
+
 #### .readStream([options])
 Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
 You can specify range options control the range of documents that are streamed. 
@@ -144,19 +149,37 @@ roda('files').readStream({ prefix: '/foo/' })
 },...]
 ```
 
-#### .liveStream()
-Obtain a never ending ReadStream for reading real-time updates of documents.
-
-Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
+##### Secondary index
 
 ```js
-roda('users').liveStream()
-  .filter(function(doc){
-    return doc.age > 15;
-  })
-  .each(function(doc){
-    //receive live updates of user age over 15
-  })
+var users = roda('users');
+
+users.registerIndex('email', function(doc, emit){
+  emit(doc.email, true); //unique
+});
+users.registerIndex('age', function(doc, emit){
+  emit(doc.age); //can be non-unique
+});
+
+users.readStream({ index: 'age', gt: 15 }); //Stream users age over 15
+users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
+```
+##### Mapping & filtering
+##### Prefixing
+
+#### .find(key, [index], [cb])
+
+#### .rebuildIndex([tag], [cb])
+
+Indexes need to be rebuilt when `registerIndex()` *after* a document is committed, or when `mapper` function has changed.
+
+`rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
+
+```js
+users.rebuildIndex('1.1', function(){
+  //indexes 1.1 rebuilt successfully.
+});
+
 ```
 
 ### Transaction
@@ -251,40 +274,6 @@ tx.commit(function(){
 });
 ```
 
-### Index
-#### .registerIndex(name, mapper)
-Indexes are generated or cleaned up transactionally on every write operations.
-##### Secondary index
-
-```js
-var users = roda('users');
-
-users.registerIndex('email', function(doc, emit){
-  emit(doc.email, true); //unique
-});
-users.registerIndex('age', function(doc, emit){
-  emit(doc.age); //can be non-unique
-});
-
-users.readStream({ index: 'age', gt: 15 }); //Stream users age over 15
-users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
-```
-##### Mapping & filtering
-##### Prefixing
-
-#### .rebuildIndex([tag], [cb])
-
-Indexes need to be rebuilt when `registerIndex()` *after* a document is committed, or when `mapper` function has changed.
-
-`rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
-
-```js
-users.rebuildIndex('1.1', function(){
-  //indexes 1.1 rebuilt successfully.
-});
-
-```
-
 ### Replication
 
 Rodabase supports multi-master replication that preserves **Causal+** - causal consistency with convergent conflict handling.
@@ -322,9 +311,24 @@ b.clockStream()
 
 #### .use('conflict', [hook...])
 
-### History
+### Timeline
+
+#### .liveStream()
+Obtain a never ending ReadStream for reading real-time updates of documents.
+
+Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
+
+```js
+roda('users').liveStream()
+  .filter(function(doc){
+    return doc.age > 15;
+  })
+  .each(function(doc){
+    //receive live updates of user age over 15
+  })
+```
 
 #### .historyStream([options])
 
-#### .trigger(job, [options])
+#### .trigger(name, job, [options])
 

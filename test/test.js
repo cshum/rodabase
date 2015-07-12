@@ -150,7 +150,7 @@ test('Transaction: isolation', function(t){
 
 test('Transactional CRUD', function(t){
   var api = roda('crud');
-  t.plan(14);
+  t.plan(13);
 
   t.equal(api.name(), 'crud', 'name()');
 
@@ -163,23 +163,21 @@ test('Transactional CRUD', function(t){
   api.post({'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'post');
   });
-  api.update('foo', {'foo':'bar'}, function(err){
-    t.ok(err.notFound, 'error update key not found');
-  });
-  api.del('foo', function(err){
-    t.ok(err.notFound, 'notFound err for non exist delete');
-  });
 
   var tx = roda.transaction();
-  api.put('bla', {'foo':'bar'}, tx, function(err, val){
+  api.put('bla', {'foo':'bar'}, tx);
+  api.get('bla', tx, function(err, val){
     t.equal(val.foo, 'bar', 'foo: bar');
     val.foo = 'boo';
-    api.update('bla', val, tx, function(err, val){
+    api.put('bla', val, tx, function(err, val){
       t.equal(val.foo, 'boo', 'foo: boo');
     });
-    api.del('bla', tx);
-    api.del('bla', tx); //redundant del
   });
+  api.del('bla', tx);
+  api.del('bla', tx, function(err){
+    t.ok(err.notFound, 'notFound err for non exist delete');
+  }); //redundant del
+
   tx.commit(function(err){
     t.notOk(err, 'no err for commit');
     api.get('bla', function(err, val){
