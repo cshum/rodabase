@@ -148,16 +148,16 @@ test('Transaction: isolation', function(t){
   });
 });
 
-test('Transactional CRUD', function(t){
+test('CRUD', function(t){
   var api = roda('crud');
-  t.plan(13);
+  t.plan(12);
 
   t.equal(api.name(), 'crud', 'name()');
 
   api.put('asdf',{'foo':'bar'}, function(err, val){
     t.equal(val.foo, 'bar', 'put');
-    api.find('asdf', function(err, val){
-      t.equal(val.foo, 'bar', 'find id');
+    api.get('asdf', function(err, val){
+      t.equal(val.foo, 'bar', 'get id');
     });
   });
   api.post({'foo':'bar'}, function(err, val){
@@ -167,10 +167,10 @@ test('Transactional CRUD', function(t){
   var tx = roda.transaction();
   api.put('bla', {'foo':'bar'}, tx);
   api.get('bla', tx, function(err, val){
-    t.equal(val.foo, 'bar', 'foo: bar');
+    t.equal(val.foo, 'bar', 'tx get');
     val.foo = 'boo';
     api.put('bla', val, tx, function(err, val){
-      t.equal(val.foo, 'boo', 'foo: boo');
+      t.equal(val.foo, 'boo', 'tx put');
     });
   });
   api.del('bla', tx);
@@ -183,9 +183,6 @@ test('Transactional CRUD', function(t){
     api.get('bla', function(err, val){
       t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
-    });
-    api.find('bla', function(err, val){
-      t.ok(err.notFound, 'notFound error for non exists find');
     });
     api.get('bla', true, function(err, state){
       t.notOk(err, 'no err.notFound with state');
@@ -378,7 +375,7 @@ test('liveStream historyStream trigger', function(t){
 
 
 test('Index and range', function(t){
-  t.plan(24 + 30);
+  t.plan(22 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -462,12 +459,6 @@ test('Index and range', function(t){
         .pluck('email').toArray(function(list){
           t.deepEqual(list, [], 'index prefix not eq ');
         });
-      users.find('foo@bar.com', 'email', function(err, val){
-        t.equal(val.email, 'foo@bar.com', 'find index');
-      });
-      users.find('foo@bar.co', 'email', function(err, val){
-        t.ok(err.notFound, 'index notFound');
-      });
       users.readStream({index: 'email', prefix:'foo@bar.co' })
         .pluck('email').toArray(function(list){
           t.deepEqual(list, ['foo@bar.com'], 'index string prefix');
