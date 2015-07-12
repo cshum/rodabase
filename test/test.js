@@ -150,15 +150,12 @@ test('Transaction: isolation', function(t){
 
 test('Transactional CRUD', function(t){
   var api = roda('crud');
-  t.plan(15);
+  t.plan(14);
 
   t.equal(api.name(), 'crud', 'name()');
 
-  api.create('asdf',{'foo':'bar'}, function(err, val){
-    t.equal(val.foo, 'bar', 'create');
-    api.create('asdf',{'foo':'bla'}, function(err, val){
-      t.ok(err.exists, 'create error if exists');
-    });
+  api.put('asdf',{'foo':'bar'}, function(err, val){
+    t.equal(val.foo, 'bar', 'put');
     api.find('asdf', function(err, val){
       t.equal(val.foo, 'bar', 'find id');
     });
