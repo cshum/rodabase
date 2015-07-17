@@ -18,10 +18,12 @@ MIT
 
 ## API
 
+**API stable; Documentation in progress.**
+
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-##API
+ 
 
 - [rodabase(path, [options])](#rodabasepath-options)
 - [roda(name)](#rodaname)
@@ -42,10 +44,10 @@ MIT
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
   - [.use('conflict', [hook...])](#useconflict-hook)
-- [Timeline](#timeline)
+- [Reactive](#reactive)
   - [.liveStream()](#livestream)
-  - [.historyStream([options])](#historystreamoptions)
   - [.trigger(name, job, [options])](#triggername-job-options)
+  - [.historyStream([options])](#historystreamoptions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -308,7 +310,9 @@ b.clockStream()
 
 #### .use('conflict', [hook...])
 
-### Timeline
+### Reactive
+
+Subscribe to past and live updates of Rodabase.
 
 #### .liveStream()
 Obtain a never ending ReadStream for reading real-time updates of documents.
@@ -325,7 +329,25 @@ roda('users').liveStream()
   })
 ```
 
-#### .historyStream([options])
-
 #### .trigger(name, job, [options])
+
+Job must be idempotent. If the process crashes before job has calledback, it will be rerun the next time it's started
+
+```js
+//Email will be sent after `users` updated.
+roda('users').trigger('email_update', function(doc, done){
+  //asynchronous email function. 
+  if(!doc._deleted)
+    sendMail({
+      from: 'Foo Bar <noreply@foo.bar>', 
+      to: doc.email,
+      subject: 'Hello ' + doc.username,
+      html: 'Your profile is updated.'
+    }, done);
+  else
+    done(null); //skip if deleted
+});
+```
+
+#### .historyStream([options])
 
