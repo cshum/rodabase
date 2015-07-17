@@ -3,9 +3,9 @@
   "version": "1.2.1",
   "description": "Transactional document store for Node.js and browsers. Built on LevelDB.",
   "scripts": {
-    "test": "set -e; node test/test.js;",
+    "test": "node test/test.js;",
     "test-browser": "beefy test/test.js:test.js",
-    "test-coverage": "set -e; ./node_modules/istanbul/lib/cli.js cover test/test.js;",
+    "test-coverage": "./node_modules/istanbul/lib/cli.js cover test/test.js;",
     "build": "rm -rf dist; mkdir dist; npm run browserify; npm run min;",
     "browserify": "browserify . -s rodabase -p bundle-collapser/plugin | derequire > dist/rodabase.js",
     "min": "uglifyjs dist/rodabase.js -mc > dist/rodabase.min.js"
