@@ -1,9 +1,9 @@
 # Rodabase
 
 Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/Level/levelup).
-* [Stream](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
-* [Transaction](#transaction) guarantees linearizable local operations.
-* [Causal+ consistent](#replication) multi master replication.
+* [Streams](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
+* [Transactions](#transaction) guarantees linearizable local operations.
+* [Causal+ consistent](#replication), transport-agnostic multi master replication.
 * Storage backends: [LevelDB](https://github.com/Level/levelup) on Node.js; IndexedDB on browser.
 
 [![Build Status](https://travis-ci.org/cshum/rodabase.svg?branch=master)](https://travis-ci.org/cshum/rodabase)
@@ -12,6 +12,7 @@ Transactional, replicable document store for Node.js and browsers. Built on [Lev
 ```bash
 $ npm install rodabase
 ```
+
 ### License
 
 MIT
@@ -19,7 +20,6 @@ MIT
 ## API
 
 **API stable; Documentation in progress.**
-
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -182,10 +182,10 @@ users.rebuildIndex('1.1', function(){
 ```
 
 ### Transaction
-Transaction guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
+Transactions in Rodabase guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
 
 LevelDB supports atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
-Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation.
+Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation, which makes it ACID compliant.
 
 #### roda.transaction()
 
