@@ -19,7 +19,7 @@ MIT
 
 ## API
 
-**API stable; Documentation in progress.**
+**API stable; documentation in progress.**
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -119,9 +119,7 @@ Indexes are generated or cleaned up transactionally on every write operations.
 
 #### .readStream([options])
 Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
-You can specify range options control the range of documents that are streamed. 
-
-Optional `options` object with the following options:
+You can specify range options control the range of documents that are streamed. `options` accepts following properties:
   * `gt` (greater than), `gte` (greater than or equal) define the lower bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
   * `lt` (less than), `lte` (less than or equal) define the higher bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
   * `reverse` boolean, default `false`, set `true` to reverse stream output.
@@ -191,26 +189,25 @@ Rodabase leverages [level-transactions](https://github.com/cshum/level-transacti
 
 Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
 ```js
-var users = roda('users');
-var logs = roda('logs');
-
 //Transactional get and put
 var tx = roda.transaction();
-users.get('bob', tx, function(err, doc){
+roda('users').get('bob', tx, function(err, doc){
   if(!doc)
     return tx.rollback(new Error('not exists'));
 
   doc.count++;
-  users.put('bob', doc, tx);
-  logs.post({ other: 'stuffs' }, tx);
+
+  //only presists if commit success
+  roda('users').put('bob', doc, tx);
+  roda('foo').put('bar', { hello: 'world' }, tx);
 })
 tx.commit(function(err){
   //err [Error: not exists] if 'bob' not found
 });
 ```
 
-Rodabase supports [middleware hooks](https://github.com/cshum/ginga#middleware), 
-with `validate` and `diff` invoked on every write operations transactionally. 
+Rodabase uses [middleware hooks](https://github.com/cshum/ginga#middleware), 
+with `validate` and `diff` invoked on every write operations. 
 
 #### .use('validate', [hook...])
 `validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
@@ -249,27 +246,25 @@ Context object consists of the following properties:
 * `transaction`: Transaction instance. Additional operations can be binded.
 
 ```js
-var count = roda('count');
-var delta = roda('delta');
+var data = roda('data');
+var logs = roda('logs');
 
-count.use('diff', function(ctx){
+data.use('diff', function(ctx){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result.n || 0;
 
   //Transaction works across sections
-  delta.post({ delta: to - from }, ctx.transaction);
+  logs.post({ delta: to - from }, ctx.transaction);
 });
 
 var tx = Roda.transaction();
-count.put('bob', { n: 6 }, tx);
-count.put('bob', { n: 8 }, tx);
-count.del('bob', tx);
+data.put('bob', { n: 6 }, tx);
+data.put('bob', { n: 8 }, tx);
+data.put('bob', { n: 9 }, tx);
+data.del('bob', tx);
 
 tx.commit(function(){
-  delta.readStream().pluck('delta').toArray(function(data){
-    //data
-    [6, 2, -8]
-  });
+  logs.readStream().pluck('delta').pipe(...); //[6, 2, 1, -9]
 });
 ```
 
@@ -312,26 +307,22 @@ b.clockStream()
 
 ### Reactive
 
-Subscribe to past and live updates of Rodabase.
-
-#### .liveStream()
-Obtain a never ending ReadStream for reading real-time updates of documents.
-
-Rodabase streams are Node Readable stream based on [Highland.js](http://highlandjs.org/).
-
-```js
-roda('users').liveStream()
-  .filter(function(doc){
-    return doc.age > 15;
-  })
-  .each(function(doc){
-    //receive live updates of user age over 15
-  })
-```
+Rodabase is reactive, live updates can be subscribed using streams and triggers. Updates are emitted *after* successful commits, so that it is both consistent and durable.
 
 #### .trigger(name, job, [options])
 
-Job must be idempotent. If the process crashes before job has calledback, it will be rerun the next time it's started
+Triggers an `name` named asynchronous `job` function every time *after* a document is committed. 
+
+`job` is provided with document object and callback function `function(doc, callback){ }`, `callback` must be invoked when job has finished.
+
+Job must be idempotent. 
+If job callback with error argument, 
+or if the process crashes before job callback, 
+it will be rerun until callback success. 
+`options` accepts following properties:
+
+* `parallel` specify maximum number of parallel jobs to be triggered. Defaults 1.
+* `retryDelay` number of milliseconds for delaying job rerun after callback error. Defaults 500.
 
 ```js
 //Email will be sent after `users` updated.
@@ -346,7 +337,23 @@ roda('users').trigger('email_update', function(doc, done){
     }, done);
   else
     done(null); //skip if deleted
+}, {
+  parallel: 3 //maximum 3 concurrent sendMail()
 });
+```
+
+
+#### .liveStream()
+Obtain a never-ending ReadStream for real-time updates of documents.
+
+```js
+roda('users').liveStream()
+  .filter(function(doc){
+    return doc.age > 15;
+  })
+  .each(function(doc){
+    //receive live updates of user age over 15
+  })
 ```
 
 #### .historyStream([options])
