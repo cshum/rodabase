@@ -77,7 +77,6 @@ roda('users').put('bob', { foo: 'bar' }, function(err, doc){
 #### .post(doc, [tx], [cb])
 Create a new document `doc` with an auto-generated `_id`.
 Auto generated _id is a unique, URL-safe, time sorted string.
-
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').post({ foo: 'bar' }, function(err, doc){
@@ -92,7 +91,6 @@ roda('users').post({ foo: 'bar' }, function(err, doc){
 
 #### .get(id, [tx], [cb])
 Retrieve a document specified by `id`. If document not exists, callback with `notFound` error.
-
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').get('bob', function(err, doc){
@@ -110,12 +108,43 @@ roda('users').get('bob', function(err, doc){
 
 #### .del(id, [tx], [cb])
 Delete a document specified by `id`. If document not exists, callback with `notFound` error.
-
-Optional [transaction](#transaction) instance `tx`.
+Optionally bind to a [transaction](#transaction) instance `tx`.
 
 ### Index
+
+Rodabase supports secondary indexes using mapper function. Indexes are calculated transactionally, results can be retrieved right after callback of a successful write.
+
 #### .registerIndex(name, mapper)
-Indexes are generated or cleaned up transactionally on every write operations.
+
+Register an index named `name` using `mapper` function. 
+
+`mapper` is provided with document object and emit function `function(doc, emit){}`.
+
+`emit` conists of arguments `emit(key, [doc], [unique])` that must be called synchronously within the `mapper`:
+* `key` index key. Unlike `_id`, `key` can be arbitrary object for sorting, such as String, Number, Date or prefixing with Array.
+* `doc` object, optionally specify the mapped document object.
+* `unique` boolean, specify . Default false.
+
+```js
+//Non unique index
+roda('users').registerIndex('age', function(doc, emit){
+  emit(doc.age); //can be non-unique
+});
+
+//Unique index
+roda('users').registerIndex('email', function(doc, emit){
+  emit(doc.email, true); //unique
+});
+
+//Multiple emits, array prefixed
+roda('posts').registerIndex('tag', function(doc, emit){
+  if( Array.isArray(doc.tags) )
+    doc.tags.forEach(function(tag){
+      emit([tag, doc.updated]);
+    });
+});
+
+```
 
 #### .readStream([options])
 Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
@@ -124,19 +153,28 @@ You can specify range options control the range of documents that are streamed. 
   * `lt` (less than), `lte` (less than or equal) define the higher bound of `_id` or `_key` to be streamed. When `reverse: true` the order will be reversed, but the documents streamed will be the same.
   * `reverse` boolean, default `false`, set `true` to reverse stream output.
   * `limit` number, limit the number of results. Default no limit.
-  * `index` define the [index mapper](#index-mapper) to be used. Default indexed by `_id`.
-  * `prefix` define the string or array prefix of `_id` or `_key` to be streamed. Default no prefix.
-
-See [Index Mapper](#index-mapper) for more options use cases.
+  * `index` define [index](#index) to be used. Default indexed by `_id`.
+  * `prefix` define string or array prefix of `_id` or `_key` to be streamed. Default no prefix.
 
 ```js
-var JSONStream = require('JSONStream');
+var JSONStream = require('JSONStream'); //JSON transform stream
 
-roda('files').readStream({ prefix: '/foo/' })
-  .pipe(JSONStream.stringify()) //Transform stream
-  .pipe(process.stdout);
+//Streams consumption
+roda('stuffs').readStream()
+  .pipe(JSONStream.stringify())
+  .pipe(process.stdout); //pipe to console
 
-//example output
+app.get('/api/stuffs', function(req, res){
+  roda('stuffs').readStream()
+    .pipe(JSONStream.stringify())
+    .pipe(res); //pipe to express response
+});
+
+roda('files').readStream({
+  prefix: '/foo/' //String prefix
+}).pipe(...)
+
+//possible files output
 [{
   "_id": "/foo/bar",
   "_rev": "5U42CUvHEz",
@@ -146,25 +184,37 @@ roda('files').readStream({ prefix: '/foo/' })
   "_rev": "5U42CUvHF",
   ...
 },...]
-```
 
-##### Secondary index
+roda('users').readStream({
+  index: 'age', 
+  gte: 15 //users of age at least 15
+}).pipe(...); 
 
-```js
-var users = roda('users');
-
-users.registerIndex('email', function(doc, emit){
-  emit(doc.email, true); //unique
+roda('users').readStream({
+  index: 'email', 
+  eq: 'test@example.com' //user of email 'test@example.com'
+}).toArray(function(list){
+  //since email is unique, list is an Array of 1 or 0 elements.
 });
-users.registerIndex('age', function(doc, emit){
-  emit(doc.age); //can be non-unique
-});
 
-users.readStream({ index: 'age', gt: 15 }); //Stream users age over 15
-users.readStream({ index: 'email', eq: 'adrian@cshum.com' }); //Stream user of email 'adrian@cshum.com'
+roda('posts').readStream({
+  index: 'tag', 
+  prefix: ['foo'], //prefixed by tag
+  gt: Date.now() - 1000 * 60 * 60, //since last hour
+  reverse: true
+}).pipe(...);
+
+//possible posts output
+[{
+  _key: ['foo', 1437203371250],
+  tags: ['foo', 'bar', 'hello']
+  ...
+}, {
+  _key: ['foo', 1437203321128],
+  tags: ['world', 'foo']
+  ...
+},...]
 ```
-##### Mapping & filtering
-##### Prefixing
 
 #### .rebuildIndex([tag], [cb])
 
@@ -180,7 +230,7 @@ users.rebuildIndex('1.1', function(){
 ```
 
 ### Transaction
-Transactions in Rodabase guarantees linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
+Transactions in Rodabase guarantee linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
 
 LevelDB supports atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
 Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation, which makes it ACID compliant.
