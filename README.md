@@ -45,8 +45,8 @@ MIT
   - [.replicateStream([options])](#replicatestreamoptions)
   - [.use('conflict', [hook...])](#useconflict-hook)
 - [Reactive](#reactive)
-  - [.liveStream()](#livestream)
   - [.trigger(name, job, [options])](#triggername-job-options)
+  - [.liveStream()](#livestream)
   - [.historyStream([options])](#historystreamoptions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -204,7 +204,7 @@ roda('posts').readStream({
   reverse: true
 }).pipe(...);
 
-//possible posts output
+//possible posts - tag output
 [{
   _key: ['foo', 1437203371250],
   tags: ['foo', 'bar', 'hello']
@@ -391,7 +391,6 @@ roda('users').trigger('email_update', function(doc, done){
   parallel: 3 //maximum 3 concurrent sendMail()
 });
 ```
-
 
 #### .liveStream()
 Obtain a never-ending ReadStream for real-time updates of documents.
