@@ -2,7 +2,7 @@
 
 Transactional, replicable document store for Node.js and browsers. Built on [LevelDB](https://github.com/Level/levelup).
 * [Streams](http://highlandjs.org/) and [middleware](https://github.com/cshum/ginga) based asynchronous API.
-* [Transactions](#transaction) guarantees linearizable local operations.
+* [Transactions](#transaction) guarantee linearizable local operations.
 * [Causal+ consistent](#replication), transport-agnostic multi master replication.
 * Storage backends: [LevelDB](https://github.com/Level/levelup) on Node.js; IndexedDB on browser.
 
@@ -136,7 +136,7 @@ roda('users').registerIndex('email', function(doc, emit){
   emit(doc.email, true); //unique
 });
 
-//Multiple emits, array prefixed
+//Multiple emits, Array prefixed
 roda('posts').registerIndex('tag', function(doc, emit){
   if( Array.isArray(doc.tags) )
     doc.tags.forEach(function(tag){
@@ -172,18 +172,18 @@ app.get('/api/stuffs', function(req, res){
 
 roda('files').readStream({
   prefix: '/foo/' //String prefix
-}).pipe(...)
-
-//possible files output
-[{
-  "_id": "/foo/bar",
-  "_rev": "5U42CUvHEz",
-  ...
-},{
-  "_id": "/foo/boo",
-  "_rev": "5U42CUvHF",
-  ...
-},...]
+}).toArray(function(list){
+  //possible output
+  [{
+    "_id": "/foo/bar",
+    "_rev": "5U42CUvHEz",
+    ...
+  },{
+    "_id": "/foo/boo",
+    "_rev": "5U42CUvHF",
+    ...
+  },...]
+});
 
 roda('users').readStream({
   index: 'age', 
@@ -194,26 +194,27 @@ roda('users').readStream({
   index: 'email', 
   eq: 'test@example.com' //user of email 'test@example.com'
 }).toArray(function(list){
-  //since email is unique, list is an Array of 1 or 0 elements.
+  //since email is unique, list has at most 1 element.
 });
 
 roda('posts').readStream({
   index: 'tag', 
-  prefix: ['foo'], //prefixed by tag
+  prefix: ['foo'], //Array prefix
   gt: Date.now() - 1000 * 60 * 60, //since last hour
   reverse: true
-}).pipe(...);
+}).toArray(function(list){
+  //possible output
+  [{
+    _key: ['foo', 1437203371250],
+    tags: ['foo', 'bar', 'hello']
+    ...
+  }, {
+    _key: ['foo', 1437203321128],
+    tags: ['world', 'foo']
+    ...
+  },...]
+});
 
-//possible posts - tag output
-[{
-  _key: ['foo', 1437203371250],
-  tags: ['foo', 'bar', 'hello']
-  ...
-}, {
-  _key: ['foo', 1437203321128],
-  tags: ['world', 'foo']
-  ...
-},...]
 ```
 
 #### .rebuildIndex([tag], [cb])
