@@ -121,7 +121,7 @@ Register an index named `name` using `mapper` function.
 `mapper` is provided with document object and emit function `function(doc, emit){}`.
 
 `emit` conists of arguments `emit(key, [doc], [unique])` that must be called synchronously within the `mapper`:
-* `key` index key. Unlike `_id`, `key` can be arbitrary object for sorting, such as String, Number, Date or prefixing with Array.
+* `key` index key. Unlike `_id`, `key` can be arbitrary object for sorting, such as String, Number, Date or prefixing with Array. Except `null` or `undefined` key is not allowed.
 * `doc` object, optionally specify the mapped document object.
 * `unique` boolean, specify . Default false.
 
