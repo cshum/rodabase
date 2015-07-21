@@ -527,7 +527,7 @@ test('Index and range', function(t){
 });
 
 test('Rebuild Index', function(t){
-  t.plan(4);
+  t.plan(5);
   var users = roda('users');
 
   users.liveStream().each(function(){
@@ -542,13 +542,19 @@ test('Rebuild Index', function(t){
       users.registerIndex('random2', function(doc, emit){
         emit(Math.random());
       });
-      users.rebuildIndex('random2', function(err){
+      users.rebuildIndex('1', function(err){
         users.readStream({ index:'random2' }).toArray(function(list){
           t.equal(list.length, 3, 'Index rebuilt');
         });
-        users.rebuildIndex('random2', function(err, cached){
+        users.rebuildIndex('1', function(err, cached){
           t.notOk(err, 'rebuild no error');
           t.ok(cached, 'cached index rebuild tag');
+          users.registerIndex('unique_age', function(doc, emit){
+            emit(doc.age, true); //make errors
+          });
+          users.rebuildIndex(function(err){
+            t.ok(err[0].exists, 'error array.');
+          });
         });
       });
     });
