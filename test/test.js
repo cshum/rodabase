@@ -553,7 +553,7 @@ test('Rebuild Index', function(t){
             emit(doc.age, true); //make errors
           });
           users.rebuildIndex(function(err){
-            t.ok(err[0].exists, 'error array.');
+            t.ok(err[0].exists, 'error array');
           });
         });
       });
