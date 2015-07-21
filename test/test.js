@@ -375,7 +375,7 @@ test('liveStream historyStream trigger', function(t){
 
 
 test('Index and range', function(t){
-  t.plan(22 + 30);
+  t.plan(23 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -415,21 +415,25 @@ test('Index and range', function(t){
     tx.commit(function(err){
       t.notOk(err, 'commit success');
 
-      users.post({ email: 'adrian@cshum.com' }, function(err, val){
+      users.post({ email: 'adrian@cshum.com', age: 25 }, function(err, val){
         t.ok(err.exists, 'Repeated');
       });
       //stress it
       for(var i = 0; i< 10; i++){
-        users.post({ email: 'foo@bar.com' }, function(err, val){
+        users.post({ email: 'foo@bar.com', age: 25 }, function(err, val){
           t.ok(err.exists, 'Repeated');
         });
-        users.post({ email: 'hello@world.com' }, function(err, val){
+        users.post({ email: 'hello@world.com', age: 25 }, function(err, val){
           t.ok(err.exists, 'Repeated');
         });
-        users.post({ email: 'adrian@cshum.com' }, function(err, val){
+        users.post({ email: 'adrian@cshum.com', age: 25 }, function(err, val){
           t.ok(err.exists, 'Repeated');
         });
       }
+      //missing age
+      users.post({ email: 'asdf@asdf.com' }, function(err, val){
+        t.ok(err.keyNull, 'Key safeguard');
+      });
 
       users.readStream({ index:'email' })
         .pluck('email').toArray(function(list){
