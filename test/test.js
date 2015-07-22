@@ -192,18 +192,18 @@ test('CRUD', function(t){
 
 });
 
-
 test('Transaction middleware: Validate', function(t){
-  t.plan(10);
+  t.plan(12);
+  var err23 = new Error('No 2 or 3 multiple');
   roda('7')
     .use('validate', function(ctx, next){
       if(ctx.result.i % 3 === 0)
-        return next(new Error('No 3 multiple'));
+        return next(err23);
       next();
     })
     .use('validate', function(ctx, next){
       if(ctx.result.i % 2 === 0)
-        return next(new Error('No 2 multiple'));
+        return next(err23);
       next();
     });
   var i;
@@ -217,6 +217,18 @@ test('Transaction middleware: Validate', function(t){
       }
     }.bind(null, i));
   }
+  var tx = roda.transaction();
+
+  roda('7')
+    .put('foo',{ i: 5 }, tx)
+    .put('bar',{ i: 3 }, tx);
+
+  tx.commit(function(err){
+    t.equal(err, err23, 'tx validate error');
+    roda('7').get('foo', function(err){
+      t.ok(err.notFound, 'tx error not committed');
+    });
+  });
 });
 
 test('Transaction middleware: diff', function(t){
