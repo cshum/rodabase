@@ -232,14 +232,16 @@ test('Transaction middleware: Validate', function(t){
 });
 
 test('Transaction middleware: diff', function(t){
-  t.plan(9);
-  roda('6').use('diff', function(ctx){
+  t.plan(10);
+  roda('6').use('diff', function(ctx, next){
     if(ctx.result){
+      if(ctx.result._id === '689') return next('on99');
       ctx.result.foo = 'bar';
       roda('6.1').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
     }
+    next();
   });
   roda('6.1').use('diff', function(ctx){
     if(ctx.result)
@@ -249,6 +251,11 @@ test('Transaction middleware: diff', function(t){
     else
       roda('6.2').del(ctx.current._id, ctx.transaction);
   });
+
+  roda('6').put('689',{}, function(err){
+    t.equal(err, 'on99', 'diff hook error');
+  });
+
   var tx = roda.transaction();
   var i;
 
