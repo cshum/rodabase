@@ -292,8 +292,8 @@ Current and resulting state of the document can be accessed
 for additional log, diff related operations.
 
 Context object consists of the following properties:
-* `current`: Current state of document. `undefined` if this is a fresh insert.
-* `result`: Resulting document. `ctx.result._deleted === true` if this is a delete. Unlike `validation` middleware, resulting document cannot be modified at this stage.
+* `current`: Current state of document. `null` if this is an insert.
+* `result`: Resulting document. `null` if this is a delete.
 * `transaction`: Transaction instance. Additional operations can be binded.
 
 ```js
@@ -302,7 +302,7 @@ var logs = roda('logs');
 
 data.use('diff', function(ctx){
   var from = ctx.current ? ctx.current.n : 0;
-  var to = ctx.result.n || 0;
+  var to = ctx.result ? ctx.result.n : 0;
 
   //Transaction works across sections
   logs.post({ delta: to - from }, ctx.transaction);

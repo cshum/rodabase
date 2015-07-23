@@ -234,7 +234,7 @@ test('Transaction middleware: Validate', function(t){
 test('Transaction middleware: diff', function(t){
   t.plan(9);
   roda('6').use('diff', function(ctx){
-    if(!ctx.result._deleted){
+    if(ctx.result){
       ctx.result.foo = 'bar';
       roda('6.1').put(ctx.result._id, {
         i: ctx.result.i * 10
@@ -242,7 +242,7 @@ test('Transaction middleware: diff', function(t){
     }
   });
   roda('6.1').use('diff', function(ctx){
-    if(!ctx.result._deleted)
+    if(ctx.result)
       roda('6.2').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
