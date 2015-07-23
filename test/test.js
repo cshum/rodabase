@@ -232,9 +232,10 @@ test('Transaction middleware: Validate', function(t){
 });
 
 test('Transaction middleware: diff', function(t){
-  t.plan(8);
+  t.plan(9);
   roda('6').use('diff', function(ctx){
     if(!ctx.result._deleted){
+      ctx.result.foo = 'bar';
       roda('6.1').put(ctx.result._id, {
         i: ctx.result.i * 10
       }, ctx.transaction);
@@ -268,6 +269,7 @@ test('Transaction middleware: diff', function(t){
     t.notOk(err, 'commit success');
 
     roda('6').readStream().toArray(function(list){
+      t.equal(list[0].foo, 'bar', 'diff modify result');
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
     roda('6').historyStream().toArray(function(list){
