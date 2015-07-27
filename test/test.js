@@ -82,7 +82,6 @@ test('Transaction: parallelism', function(t){
   var api = roda('1');
   var count = 0;
 
-  t.plan(1);
   function run(i){
     var tx = roda.transaction();
     api.get('k', tx, function(err, val){
@@ -96,6 +95,7 @@ test('Transaction: parallelism', function(t){
       if(count === n)
         api.get('k', function(err, val){
           t.equal(val.k, n, 'Incremential');
+          t.end();
         });
     });
   }
@@ -103,7 +103,6 @@ test('Transaction: parallelism', function(t){
 });
 
 test('Transaction: sequential operations', function(t){
-  t.plan(4);
   var api = roda('3');
   var tx = roda.transaction();
 
@@ -118,13 +117,13 @@ test('Transaction: sequential operations', function(t){
         t.equal(list.length, n, 'list filled after commit');
         t.deepEqual(_.sortBy(_.shuffle(list), '_id'), list, '_id incremental');
         t.deepEqual(_.sortBy(_.shuffle(list), '_rev'), list, '_rev incremental');
+        t.end();
       });
     });
   });
 });
 
 test('Transaction: isolation', function(t){
-  t.plan(2);
   var c = roda('count');
   var tx = roda.transaction();
   var tx2 = roda.transaction();
@@ -142,6 +141,7 @@ test('Transaction: isolation', function(t){
       tx2.commit(function(){
         c.get('bob', function(err, val){
           t.equal(val.n, 168, 'after tx2 commit');
+          t.end();
         });
       });
     });
@@ -150,7 +150,6 @@ test('Transaction: isolation', function(t){
 
 test('CRUD', function(t){
   var api = roda('crud');
-  t.plan(12);
 
   t.equal(api.name(), 'crud', 'name()');
 
@@ -183,17 +182,17 @@ test('CRUD', function(t){
     api.get('bla', function(err, val){
       t.ok(err.notFound, 'notFound error for non exists get');
       t.notOk(val, 'no val after delete');
-    });
-    api.get('bla', true, function(err, state){
-      t.notOk(err, 'no err.notFound with state');
-      t.ok(state.snapshot._deleted, 'val deleted');
+      api.get('bla', true, function(err, state){
+        t.notOk(err, 'no err.notFound with state');
+        t.ok(state.snapshot._deleted, 'val deleted');
+        t.end();
+      });
     });
   });
 
 });
 
 test('Transaction middleware: Validate', function(t){
-  t.plan(12);
   var err23 = new Error('No 2 or 3 multiple');
   roda('7')
     .use('validate', function(ctx, next){
@@ -227,6 +226,7 @@ test('Transaction middleware: Validate', function(t){
     t.equal(err, err23, 'tx validate error');
     roda('7').get('foo', function(err){
       t.ok(err.notFound, 'tx error not committed');
+      t.end();
     });
   });
 });
@@ -569,7 +569,6 @@ test('Index and range', function(t){
 });
 
 test('Rebuild Index', function(t){
-  t.plan(5);
   var users = roda('users');
 
   users.liveStream().each(function(){
@@ -596,6 +595,7 @@ test('Rebuild Index', function(t){
           });
           users.rebuildIndex(function(err){
             t.ok(err[0].exists, 'error array');
+            t.end();
           });
         });
       });
@@ -777,7 +777,6 @@ test('Replication conflict detection', function(t){
       a.readStream().toArray(read);
       b.readStream().toArray(read);
       c.readStream().toArray(read);
-
     }, 3000);
 
   });
@@ -799,7 +798,6 @@ test('Replication conflict detection', function(t){
 });
 
 test('gets from dependencies', function(t){
-  t.plan(4);
   var server = roda('serverC');
   var server2 = roda('serverC2');
   var a = roda('a5');
@@ -853,6 +851,7 @@ test('gets from dependencies', function(t){
               codec.seqKey(data._rev) > codec.seqKey(cFrom), 
               'C gets from B ordering'
             );
+            t.end();
           });
         }, 1000);
       });
