@@ -232,7 +232,7 @@ test('Transaction middleware: Validate', function(t){
 });
 
 test('Transaction middleware: diff', function(t){
-  t.plan(11);
+  t.plan(12);
   roda('6').use('diff', function(ctx, next){
     if(ctx.result){
       if(ctx.result._id === '689') 
@@ -266,7 +266,10 @@ test('Transaction middleware: diff', function(t){
   var i;
 
   for(i = 0; i < n; i++)
-    roda('6').put(codec.encodeNumber(i), { i: i }, tx);
+    roda('6').put(codec.encodeNumber(i), { i: i }, tx, function(err, doc){
+      if(doc.i === 0)
+        t.equal(doc.foo, 'bar', 'diff modify result');
+    });
 
   for(i = 0; i < n; i+=3)
     roda('6').del(codec.encodeNumber(i), tx);
