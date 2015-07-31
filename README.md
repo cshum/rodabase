@@ -31,19 +31,20 @@ MIT
   - [.post(doc, [tx], [cb])](#postdoc-tx-cb)
   - [.get(id, [tx], [cb])](#getid-tx-cb)
   - [.del(id, [tx], [cb])](#delid-tx-cb)
+- [Transaction](#transaction)
+  - [roda.transaction()](#rodatransaction)
+- [Hooks](#hooks)
+  - [.use('validate', [hook...])](#usevalidate-hook)
+  - [.use('diff', [hook...])](#usediff-hook)
+  - [.use('conflict', [hook...])](#useconflict-hook)
 - [Index](#index)
   - [.registerIndex(name, mapper)](#registerindexname-mapper)
   - [.readStream([options])](#readstreamoptions)
   - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
-- [Transaction](#transaction)
-  - [roda.transaction()](#rodatransaction)
-  - [.use('validate', [hook...])](#usevalidate-hook)
-  - [.use('diff', [hook...])](#usediff-hook)
 - [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
-  - [.use('conflict', [hook...])](#useconflict-hook)
 - [Reactive](#reactive)
   - [.trigger(name, job, [options])](#triggername-job-options)
   - [.liveStream()](#livestream)
@@ -109,6 +110,98 @@ roda('users').get('bob', function(err, doc){
 #### .del(id, [tx], [cb])
 Delete a document specified by `id`. If document not exists, callback with `notFound` error.
 Optionally bind to a [transaction](#transaction) instance `tx`.
+
+### Transaction
+Transactions in Rodabase guarantee linearizable consistency for local operations, which 
+avoids unexpected behavior and simplifies application development.
+
+LevelDB supports atomic batched operations,
+while durability is configurable via `sync` [option](https://github.com/Level/levelup#options-1) of LevelDB.
+Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation, which makes it ACID compliant.
+
+#### roda.transaction()
+
+Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
+```js
+//Transactional get and put
+var tx = roda.transaction();
+roda('users').get('bob', tx, function(err, doc){
+  if(!doc)
+    return tx.rollback(new Error('not exists'));
+
+  doc.count++;
+
+  //only presists if commit success
+  roda('users').put('bob', doc, tx);
+  roda('foo').put('bar', { hello: 'world' }, tx);
+})
+tx.commit(function(err){
+  //err [Error: not exists] if 'bob' not found
+});
+```
+
+### Hooks
+
+#### .use('validate', [hook...])
+`validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
+
+Context object consists of the following properties:
+* `result`: Result document before locking. Changes can be made during this stage.
+
+```js
+var people = roda('people');
+
+people.use('validate', function(ctx, next){
+  if(typeof ctx.result.name !== 'string')
+    return next(new Error('Name must be a string.'));
+  //modify result
+  ctx.result.name = ctx.result.name.toUpperCase();
+  next();
+});
+
+people.post({ name: 123 }, function(err, val){
+  //Error: Name must be a string.
+});
+people.post({ name: 'bar' }, function(err, val){
+  //val.name === 'BAR'
+});
+```
+
+#### .use('diff', [hook...])
+`diff` invoked when document is locked.
+Current and resulting state of the document can be accessed 
+for additional log, diff related operations.
+
+Context object consists of the following properties:
+* `current`: Current state of document. `null` if this is an insert.
+* `result`: Resulting document. `null` if this is a delete.
+* `transaction`: Transaction instance. Additional operations can be binded.
+
+```js
+var data = roda('data');
+var logs = roda('logs');
+
+data.use('diff', function(ctx){
+  var from = ctx.current ? ctx.current.n : 0;
+  var to = ctx.result ? ctx.result.n : 0;
+
+  //Transaction works across sections
+  logs.post({ delta: to - from }, ctx.transaction);
+});
+
+var tx = Roda.transaction();
+data.put('bob', { n: 6 }, tx);
+data.put('bob', { n: 8 }, tx);
+data.put('bob', { n: 9 }, tx);
+data.del('bob', tx);
+
+tx.commit(function(){
+  logs.readStream().pluck('delta').pipe(...); //[6, 2, 1, -9]
+});
+```
+
+#### .use('conflict', [hook...])
+
 
 ### Index
 
@@ -230,94 +323,6 @@ users.rebuildIndex('1.1', function(){
 
 ```
 
-### Transaction
-Transactions in Rodabase guarantee linearizable consistency for local operations, which avoids many unexpected behavior and simplifies application development.
-
-LevelDB supports atomic batched operations. This is an important primitive for building solid database functionality with inherent consistency.
-Rodabase leverages [level-transactions](https://github.com/cshum/level-transactions) for two-phase locking and snapshot isolation, which makes it ACID compliant.
-
-#### roda.transaction()
-
-Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
-```js
-//Transactional get and put
-var tx = roda.transaction();
-roda('users').get('bob', tx, function(err, doc){
-  if(!doc)
-    return tx.rollback(new Error('not exists'));
-
-  doc.count++;
-
-  //only presists if commit success
-  roda('users').put('bob', doc, tx);
-  roda('foo').put('bar', { hello: 'world' }, tx);
-})
-tx.commit(function(err){
-  //err [Error: not exists] if 'bob' not found
-});
-```
-
-Rodabase uses [middleware hooks](https://github.com/cshum/ginga#middleware), 
-with `validate` and `diff` invoked on every write operations. 
-
-#### .use('validate', [hook...])
-`validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
-
-Context object consists of the following properties:
-* `result`: Result document before locking. Changes can be made during this stage.
-
-```js
-var people = roda('people');
-
-people.use('validate', function(ctx, next){
-  if(typeof ctx.result.name !== 'string')
-    return next(new Error('Name must be a string.'));
-  //modify result
-  ctx.result.name = ctx.result.name.toUpperCase();
-  next();
-});
-
-people.post({ name: 123 }, function(err, val){
-  //Error: Name must be a string.
-});
-people.post({ name: 'bar' }, function(err, val){
-  //val.name === 'BAR'
-});
-```
-
-#### .use('diff', [hook...])
-`diff` invoked when document is locked.
-Current and resulting state of the document can be accessed 
-for additional log, diff related operations.
-
-Context object consists of the following properties:
-* `current`: Current state of document. `null` if this is an insert.
-* `result`: Resulting document. `null` if this is a delete.
-* `transaction`: Transaction instance. Additional operations can be binded.
-
-```js
-var data = roda('data');
-var logs = roda('logs');
-
-data.use('diff', function(ctx){
-  var from = ctx.current ? ctx.current.n : 0;
-  var to = ctx.result ? ctx.result.n : 0;
-
-  //Transaction works across sections
-  logs.post({ delta: to - from }, ctx.transaction);
-});
-
-var tx = Roda.transaction();
-data.put('bob', { n: 6 }, tx);
-data.put('bob', { n: 8 }, tx);
-data.put('bob', { n: 9 }, tx);
-data.del('bob', tx);
-
-tx.commit(function(){
-  logs.readStream().pluck('delta').pipe(...); //[6, 2, 1, -9]
-});
-```
-
 ### Replication
 
 Rodabase supports multi-master replication that preserves **Causal+** - causal consistency with convergent conflict handling.
@@ -352,8 +357,6 @@ b.clockStream()
   .pipe(a.changesStream({ live: true }))
   .pipe(b.replicateStream());
 ```
-
-#### .use('conflict', [hook...])
 
 ### Reactive
 
