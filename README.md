@@ -265,7 +265,6 @@ with `validate` and `diff` invoked on every write operations.
 
 Context object consists of the following properties:
 * `result`: Result document before locking. Changes can be made during this stage.
-* `transaction`: Transaction instance. Additional operations can be binded.
 
 ```js
 var people = roda('people');
