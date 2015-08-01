@@ -396,7 +396,7 @@ Rodabase is reactive, live updates can be subscribed using streams and triggers.
 
 #### .trigger(name, job, [options])
 
-Triggers an `name` named asynchronous `job` function every time *after* a document is committed. 
+Triggers an `name` named asynchronous `job()` at-least-once, after a document is committed. 
 
 `job` is provided with document object and callback function `function(doc, callback){ }`, `callback` must be invoked when job has finished.
 
