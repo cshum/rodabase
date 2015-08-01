@@ -328,13 +328,15 @@ Only available for indexes with `unique` flag.
 If `key` not exists, callback with `notFound` error.
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
+//email index
+roda('users').registerIndex('email', function(doc, emit){
+  emit(doc.email, true); //unique email index
+});
+
 //Transactional
 var tx = roda.transaction();
 
 roda('users')
-  .registerIndex('email', function(doc, emit){
-    emit(doc.email, true); //unique email index
-  })
   .put('foo', { email: 'foo@bar.com', age: 167 }, tx)
   .getBy('email', 'foo@bar.com', tx, function(err, doc){
      //example doc
