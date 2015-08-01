@@ -405,7 +405,7 @@ test('liveStream historyStream trigger', function(t){
 
 
 test('Index and range', function(t){
-  t.plan(31 + 30);
+  t.plan(35 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
@@ -443,7 +443,13 @@ test('Index and range', function(t){
       .post({ email: 'adrian@cshum.com', age: 25, gender:'M' }, tx)
       .post({ email: 'hello@world.com', age: 15, gender:'m' }, tx)
       .put('dummy', { email: 'foo@bar.com', age: 167, gender: 'F'}, tx)
+      .getBy('email', 'foo@bar.com', tx, function(err, val){
+        t.equal(val.age, 167, 'tx getBy');
+      })
       .del('dummy', tx)
+      .getBy('email', 'foo@bar.com', tx, function(err, val){
+        t.ok(err.notFound, 'tx getBy notFound');
+      })
       .post({ email: 'foo@bar.com', age: 15, gender:'F' }, tx);
 
     tx.commit(function(err){
@@ -480,6 +486,12 @@ test('Index and range', function(t){
       users.readStream({index: 'foo'}).pull(function(err, item){
         t.equal(item._key, 'adrian@cshum.com', 'Email Key');
         t.equal(item.foo, 'bar', 'custom field');
+      });
+      users.getBy('email', 'foo@bar.com', function(err, val){
+        t.equal(val.email, 'foo@bar.com', 'index getBy');
+      });
+      users.getBy('email', 'foo@bar.co', function(err, val){
+        t.ok(err.notFound, 'index getBy notFound');
       });
       users.readStream({index: 'email', eq:'foo@bar.com' })
         .pluck('email').toArray(function(list){

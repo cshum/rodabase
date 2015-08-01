@@ -39,8 +39,9 @@ MIT
   - [.use('conflict', [hook...])](#useconflict-hook)
 - [Index](#index)
   - [.registerIndex(name, mapper)](#registerindexname-mapper)
-  - [.readStream([options])](#readstreamoptions)
   - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
+  - [.readStream([options])](#readstreamoptions)
+  - [.getBy(index, key, [tx], [cb])](#getbyindex-key-tx-cb)
 - [Replication](#replication)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
@@ -91,7 +92,7 @@ roda('users').post({ foo: 'bar' }, function(err, doc){
 ```
 
 #### .get(id, [tx], [cb])
-Retrieve a document specified by `id`. If document not exists, callback with `notFound` error.
+Retrieve a document specified by `id`. If `id` not exists, callback with `notFound` error.
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
 roda('users').get('bob', function(err, doc){
@@ -121,7 +122,7 @@ Rodabase leverages [level-transactions](https://github.com/cshum/level-transacti
 
 #### roda.transaction()
 
-Creates a new transaction instance. `get()`, `put()`, `del()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
+Creates a new transaction instance. `get()`, `put()`, `del()`, `getBy()` methods can be binded to the transaction instance, to perform operations in a sequential, atomic, isolated manner.
 ```js
 //Transactional get and put
 var tx = roda.transaction();
@@ -189,7 +190,7 @@ data.use('diff', function(ctx){
   logs.post({ delta: to - from }, ctx.transaction);
 });
 
-var tx = Roda.transaction();
+var tx = roda.transaction();
 data.put('bob', { n: 6 }, tx);
 data.put('bob', { n: 8 }, tx);
 data.put('bob', { n: 9 }, tx);
@@ -216,7 +217,7 @@ Register an index named `name` using `mapper` function.
 `emit` conists of arguments `emit(key, [doc], [unique])` that must be called synchronously within the `mapper`:
 * `key` index key. Unlike `_id`, `key` can be arbitrary object for sorting, such as String, Number, Date or prefixing with Array. Except `null` or `undefined` key is not allowed.
 * `doc` object, optionally specify the mapped document object.
-* `unique` boolean, specify . Default false.
+* `unique` boolean. If `true`, `key` must be unique within the index, otherwise writes callback with `exists` error. Default `false`.
 
 ```js
 //Non unique index
@@ -237,7 +238,26 @@ roda('posts').registerIndex('tag', function(doc, emit){
     });
 });
 
+//Conditional emit, sorted by updated
+roda('posts').registerIndex('recent', function(doc, emit){
+  if(doc.active) emit(doc.updated);
+});
+
 ```
+
+#### .rebuildIndex([tag], [cb])
+
+Indexes need to be rebuilt when `registerIndex()` *after* a document is committed, or when `mapper` function has changed.
+
+`rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
+
+```js
+users.rebuildIndex('1.1', function(){
+  //indexes 1.1 rebuilt successfully.
+});
+
+```
+
 
 #### .readStream([options])
 Obtain a ReadStream of the Roda section by calling the `readStream()` method. 
@@ -283,13 +303,6 @@ roda('users').readStream({
   gte: 15 //users of age at least 15
 }).pipe(...); 
 
-roda('users').readStream({
-  index: 'email', 
-  eq: 'test@example.com' //user of email 'test@example.com'
-}).toArray(function(list){
-  //since email is unique, list has at most 1 element.
-});
-
 roda('posts').readStream({
   index: 'tag', 
   prefix: ['foo'], //Array prefix
@@ -309,18 +322,34 @@ roda('posts').readStream({
 });
 
 ```
+#### .getBy(index, key, [tx], [cb])
+Retrieve a uniquely indexed document specified by `index` and `key`. 
+Only available for indexes with `unique` flag.
+If `key` not exists, callback with `notFound` error.
+Optionally bind to a [transaction](#transaction) instance `tx`.
+```
+var tx = roda.transaction();
 
-#### .rebuildIndex([tag], [cb])
-
-Indexes need to be rebuilt when `registerIndex()` *after* a document is committed, or when `mapper` function has changed.
-
-`rebuildIndex()` will rebuild *all* registered index within the roda section. Optionally specify `tag` so that indexes will only get rebuilt when `tag` has changed.
-
-```js
-users.rebuildIndex('1.1', function(){
-  //indexes 1.1 rebuilt successfully.
-});
-
+roda('users')
+  .registerIndex('email', function(doc, emit){
+    emit(doc.email, true); //unique emal index
+  })
+  .put('foo', { email: 'foo@bar.com', age: 167 }, tx)
+  .getBy('email', 'foo@bar.com', tx, function(err, doc){
+     //example doc
+     {
+       _id: 'foo',
+       _key: 'foo@bar.com',
+       _rev: '5U42CUvHEz',
+       email: 'foo@bar.com',
+       age: 167
+     }
+  })
+  .del('foo')
+  .getBy('email', 'foo@bar.com', tx, function(err, doc){
+     //Error not found
+  })
+...
 ```
 
 ### Replication
