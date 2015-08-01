@@ -328,11 +328,12 @@ Only available for indexes with `unique` flag.
 If `key` not exists, callback with `notFound` error.
 Optionally bind to a [transaction](#transaction) instance `tx`.
 ```js
+//Transactional
 var tx = roda.transaction();
 
 roda('users')
   .registerIndex('email', function(doc, emit){
-    emit(doc.email, true); //unique emal index
+    emit(doc.email, true); //unique email index
   })
   .put('foo', { email: 'foo@bar.com', age: 167 }, tx)
   .getBy('email', 'foo@bar.com', tx, function(err, doc){
@@ -345,11 +346,13 @@ roda('users')
        age: 167
      }
   })
-  .del('foo')
+  .del('foo', tx)
   .getBy('email', 'foo@bar.com', tx, function(err, doc){
-     //Error not found
-  })
-...
+     //notFound error
+  });
+
+tx.commit(...);
+
 ```
 
 ### Replication
