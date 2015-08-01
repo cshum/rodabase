@@ -327,7 +327,7 @@ Retrieve a uniquely indexed document specified by `index` and `key`.
 Only available for indexes with `unique` flag.
 If `key` not exists, callback with `notFound` error.
 Optionally bind to a [transaction](#transaction) instance `tx`.
-```
+```js
 var tx = roda.transaction();
 
 roda('users')
