@@ -140,10 +140,10 @@ tx.commit(function(err){
 ### Hooks
 
 #### .use('validate', [hook...])
-`validation` invoked at the beginning of a write operation. Result can be validated and changes can be made before the document is locked.
+`validation` triggered when putting a document. Invoked at the beginning of a write operation, result can be validated and changes can be made before the document is locked.
 
 Context object consists of the following properties:
-* `result`: Result document before locking. Changes can be made during this stage.
+* `result`: Result document before locking.
 
 ```js
 var people = roda('people');
@@ -151,49 +151,56 @@ var people = roda('people');
 people.use('validate', function(ctx, next){
   if(typeof ctx.result.name !== 'string')
     return next(new Error('Name must be a string.'));
+
   //modify result
   ctx.result.name = ctx.result.name.toUpperCase();
+
   next();
 });
 
 people.post({ name: 123 }, function(err, val){
   //Error: Name must be a string.
 });
-people.post({ name: 'bar' }, function(err, val){
+people.put('foo', { name: 'bar' }, function(err, val){
   //val.name === 'BAR'
 });
+people.del('foo'); //will not trigger validate
 ```
 
 #### .use('diff', [hook...])
-`diff` invoked when document is locked.
-Current and resulting state of the document can be accessed 
-for additional log, diff related operations.
+`diff` triggered when putting and deleting a document.
+Invoked when document is locked, current and resulting states of document are accessible.
+It also exposes the transaction instance, which makes it a very powerful mechanism for  a lot of use cases, such as 
+enforcing data integrity and permissions, creating arbitrary triggers and versioning patterns. 
 
 Context object consists of the following properties:
 * `current`: Current state of document. `null` if this is an insert.
 * `result`: Resulting document. `null` if this is a delete.
-* `transaction`: Transaction instance. Additional operations can be binded.
+* `transaction`: Transaction instance.
 
 ```js
 var data = roda('data');
 var logs = roda('logs');
 
-data.use('diff', function(ctx){
+data.use('diff', function(ctx, next){
   var from = ctx.current ? ctx.current.n : 0;
   var to = ctx.result ? ctx.result.n : 0;
 
   //Transaction works across sections
   logs.post({ delta: to - from }, ctx.transaction);
+
+  next();
 });
 
 var tx = roda.transaction();
+
 data.put('bob', { n: 6 }, tx);
 data.put('bob', { n: 8 }, tx);
 data.put('bob', { n: 9 }, tx);
 data.del('bob', tx);
 
 tx.commit(function(){
-  logs.readStream().pluck('delta').pipe(...); //[6, 2, 1, -9]
+  logs.readStream().pluck('delta').toArray(...); //[6, 2, 1, -9]
 });
 ```
 
