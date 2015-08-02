@@ -46,10 +46,6 @@ MIT
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
-- [Reactive](#reactive)
-  - [.trigger(name, job, [options])](#triggername-job-options)
-  - [.liveStream()](#livestream)
-  - [.historyStream([options])](#historystreamoptions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -391,56 +387,3 @@ b.clockStream()
   .pipe(a.changesStream({ live: true }))
   .pipe(b.replicateStream());
 ```
-
-### Reactive
-
-Rodabase is reactive, live updates can be subscribed using streams and triggers. Updates are emitted *after* successful commits, so that it is both consistent and durable.
-
-#### .trigger(name, job, [options])
-
-Triggers an `name` named asynchronous `job()` at-least-once, after a document is committed. 
-
-`job` is provided with document object and callback function `function(doc, callback){ }`, `callback` must be invoked when job has finished.
-
-Job must be idempotent. 
-If job callback with error argument, 
-or if the process crashes before job callback, 
-it will be rerun until callback success. 
-`options` accepts following properties:
-
-* `parallel` specify maximum number of parallel jobs to be triggered. Defaults 1.
-* `retryDelay` number of milliseconds for delaying job rerun after callback error. Defaults 500.
-
-```js
-//Email will be sent after `users` updated.
-roda('users').trigger('email_update', function(doc, done){
-  //asynchronous email function. 
-  if(!doc._deleted)
-    sendMail({
-      from: 'Foo Bar <noreply@foo.bar>', 
-      to: doc.email,
-      subject: 'Hello ' + doc.username,
-      html: 'Your profile is updated.'
-    }, done);
-  else
-    done(null); //skip if deleted
-}, {
-  parallel: 3 //maximum 3 concurrent sendMail()
-});
-```
-
-#### .liveStream()
-Obtain a never-ending ReadStream for real-time updates of documents.
-
-```js
-roda('users').liveStream()
-  .filter(function(doc){
-    return doc.age > 15;
-  })
-  .each(function(doc){
-    //receive live updates of user age over 15
-  })
-```
-
-#### .historyStream([options])
-

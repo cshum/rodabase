@@ -288,121 +288,24 @@ test('Transaction middleware: diff', function(t){
       t.equal(list[0].foo, 'bar', 'diff modify result');
       t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
     });
-    roda('6').historyStream().toArray(function(list){
+    roda('6').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'time n length');
     });
     roda('6.1').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.1').historyStream().toArray(function(list){
+    roda('6.1').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'hook time n length');
     });
     roda('6.2').readStream().toArray(function(list){
       t.equal(list.length, Math.floor(n/2), 'hook n/2 length');
     });
-    roda('6.2').historyStream().toArray(function(list){
+    roda('6.2').changesStream({clocks:[]}).toArray(function(list){
       t.equal(list.length, n, 'hook time n length');
     });
   });
 
 });
-
-test('historyStream and trigger', function(t){
-  t.plan(7);
-  var api = roda('4');
-  var tx = roda.transaction();
-  var i;
-
-  for(i = 0; i < n; i++)
-    api.put(codec.encodeNumber(i), { i: i }, tx);
-  for(i = 0; i < n; i++)
-    api.put(codec.encodeNumber(i), { i: i }, tx); //redundant put
-
-  for(i = 0; i < n; i+=3)
-    api.del(codec.encodeNumber(i), tx);
-  for(i = 0; i < n; i+=3)
-    api.del(codec.encodeNumber(i), tx); //non-exist del
-
-  tx.commit(function(err){
-    t.notOk(err, 'commit success');
-
-    api.readStream().toArray(function(list){
-      t.equal(list.length, Math.floor(n*2/3), 'read 2/3 n length');
-    });
-    api.historyStream().toArray(function(list){
-      t.equal(list.length, n, 'historyStream n length');
-      t.deepEqual(_.sortBy(_.shuffle(list), '_key'), list, '_key incremental');
-
-      var linear = [];
-      var parallel = [];
-      var retry = [];
-      var count = 0;
-      
-      api.trigger('linear', function(doc, next){
-        linear.push(doc);
-        if(linear.length === n)
-          t.deepEqual(linear, list, 'linear trigger incremental');
-        setTimeout(next, Math.random() * 10);
-      })
-      .trigger('parallel', function(doc, next){
-        parallel.push(doc);
-        if(parallel.length === n)
-          t.deepEqual(parallel, list, 'parallel trigger incremental');
-        setTimeout(next, Math.random() * 10);
-      }, { parallel: 7 })
-      .trigger('retry', function(doc, next){
-        if(count < Math.random() * 5){
-          count++;
-          next(new Error());
-        }else{
-          retry.push(doc);
-          count = 0;
-          if(retry.length === n)
-            t.deepEqual(retry, list, 'retry trigger incremental');
-          next();
-        }
-      }, { retryDelay: 1 });
-    });
-  });
-});
-
-test('liveStream historyStream trigger', function(t){
-  t.plan(3);
-  var api = roda('4');
-  var m = 17;
-
-  api.liveStream()
-    .drop(m - 1)
-    .pull(function(err, data){
-      t.equal(data.m, m - 1, 'liveStream tail');
-    });
-
-  api.historyStream({ live: true })
-    .drop(n + m - 1)
-    .pull(function(err, data){
-      t.equal(data.m, m - 1, 'live historyStream tail');
-    });
-
-  //destroy trigger instance to test durability
-  api._triggered.linear.destroy();
-  delete api._triggered.linear;
-
-  api.liveStream().take(m).pluck('_rev').collect().pull(function(err, list){
-    var linear = [];
-    api.trigger('linear', function(doc, next){
-      linear.push(doc._rev);
-      if(linear.length === m)
-        return t.deepEqual(linear, list, 'durable trigger');
-      next();
-    });
-  });
-
-  var tx = roda.transaction();
-  for(i = 0; i < m; i++)
-    api.post({ m:i }, tx);
-  tx.commit();
-});
-
 
 test('Index and range', function(t){
   t.plan(35 + 30);
