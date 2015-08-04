@@ -530,6 +530,11 @@ test('Rebuild Index', function(t){
 function pipe(source, dest){
   var stream = dest.clockStream()
     .pipe(source.changesStream({ live: true }))
+    .pipe(dest.replicateStream());
+}
+function pipe2(source, dest){
+  var stream = dest.clockStream()
+    .pipe(source.changesStream({ live: true }))
     .take(n)
     .on('end', function(){
       //simulate reconnection such that 
@@ -572,14 +577,14 @@ test('Replications', function(t){
     b.post({b:i});
 
   pipe(b, a);
-  pipe(a, c);
+  pipe2(a, c);
 
   //stress
   for(i = 0; i < 3; i++){
-    pipe(a, d);
-    pipe(b, d);
-    pipe(c, d);
-    pipe(d, d);
+    pipe2(a, d);
+    pipe2(b, d);
+    pipe2(c, d);
+    pipe2(d, d);
   }
 });
 
