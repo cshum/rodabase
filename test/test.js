@@ -9,6 +9,7 @@ if(process.browser){
 var rodabase = require('../');
 
 var test = require('tape');
+var ginga = require('ginga');
 var timestamp = require('../lib/timestamp');
 var codec = require('../lib/codec');
 var _ = require('underscore');
@@ -307,37 +308,43 @@ test('Transaction middleware: diff', function(t){
 
 });
 
-test('Index and range', function(t){
+test('Plugin, Index and range', function(t){
   t.plan(35 + 30);
   function isEmail(str){
     return /\S+@\S+\.\S+/.test(str);
   }
-  var users = roda('users');
-  users.use('validate', function(ctx, next){
-    if(!isEmail(ctx.result.email))
-      return next(new Error('Invalid email.'));
-    if(_.isString(ctx.result.gender))
-      ctx.result.gender = ctx.result.gender.toUpperCase();
-    next();
-  })
-  .registerIndex('email', function(doc, emit){
-    emit(doc.email, true);
-  })
-  .registerIndex('age', function(doc, emit){
-    emit(doc.age);
-  })
-  .registerIndex('foo', function(doc, emit){
-    emit(doc.email, {foo:'bar'}, true);
-  })
-  .registerIndex('gender_email', function(doc, emit){
-    if(doc.email)
-      emit([doc.gender, doc.email]);
-  })
-  .registerIndex('gender_age', function(doc, emit){
-    if(doc.gender)
-      emit([doc.gender, doc.age]);
-  })
-  .post({ email: 'abc' }, function(err, val){
+
+  var plugin = ginga()
+    .use('init', function(){
+      this.registerIndex('email', function(doc, emit){
+        emit(doc.email, true);
+      });
+      this.registerIndex('age', function(doc, emit){
+        emit(doc.age);
+      });
+      this.registerIndex('foo', function(doc, emit){
+        emit(doc.email, {foo:'bar'}, true);
+      });
+      this.registerIndex('gender_email', function(doc, emit){
+        if(doc.email)
+          emit([doc.gender, doc.email]);
+      });
+      this.registerIndex('gender_age', function(doc, emit){
+        if(doc.gender)
+          emit([doc.gender, doc.age]);
+      });
+    })
+    .use('validate', function(ctx, next){
+      if(!isEmail(ctx.result.email))
+        return next(new Error('Invalid email.'));
+      if(_.isString(ctx.result.gender))
+        ctx.result.gender = ctx.result.gender.toUpperCase();
+      next();
+    });
+
+  var users = roda('users').use(plugin);
+
+  users.post({ email: 'abc' }, function(err, val){
     t.ok(err, 'Invalid Email');
 
     var tx = roda.transaction();
