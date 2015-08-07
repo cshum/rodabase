@@ -24,6 +24,9 @@ var roda = rodabase(dbPath, { ttl: n * 1000, db: db });
 console.log('Rodabase test db = '+dbName+', n = '+n);
 
 //simulate inconsistent delay
+roda.fn.use('init', function(ctx, next){
+  setTimeout(next, Math.random() * 5);
+});
 roda.fn.use('validate', function(ctx, next){
   setTimeout(next, Math.random() * 5);
 });
