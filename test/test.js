@@ -588,12 +588,6 @@ test('Replications', function(t){
 test('Replication causal ordering', function(t){
   t.plan(6);
 
-  function pipe(source, dest, delay){
-    dest.replicateStream()
-      .ratelimit(1, 50) //break debounce
-      .pipe(source.replicateStream());
-  }
-
   var a = roda('a3');
   var b = roda('b3');
   var c = roda('c3');

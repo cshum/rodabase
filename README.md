@@ -43,6 +43,7 @@ MIT
   - [.readStream([options])](#readstreamoptions)
   - [.getBy(index, key, [tx], [cb])](#getbyindex-key-tx-cb)
 - [Replication](#replication)
+  - [.liveStream()](#livestream)
   - [.clockStream()](#clockstream)
   - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
@@ -380,6 +381,8 @@ Special fields are reserved of identifying states of documents:
 Rodabase exposes replication mechanism as Node.js stream, which is transport-agnostic:
 * [roda-socket.io](https://github.com/cshum/roda-socket.io) - Socket.IO transport.
 
+#### .liveStream()
+
 #### .clockStream()
 
 Readable stream of latest revisions i.e. lamport clocks of database section.
@@ -390,7 +393,8 @@ Readable stream of latest revisions i.e. lamport clocks of database section.
 
 ```js
 //a replicate to b
-b.clockStream()
-  .pipe(a.changesStream({ live: true }))
-  .pipe(b.replicateStream());
+var ar = a.replicateStream();
+var br = b.replicateStream();
+
+a.pipe(b).pipe(a)
 ```
