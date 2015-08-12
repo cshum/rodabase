@@ -534,11 +534,10 @@ test('Rebuild Index', function(t){
   });
 });
 
-function pipe(source, dest){
-  dest.replicateStream().pipe(source.replicateStream());
-}
-function pipe2(source, dest){
-  dest.replicateStream().pipe(source.replicateStream());
+function sync(a, b){
+  var as = a.replicateStream();
+  var bs = b.replicateStream();
+  as.pipe(bs).pipe(as);
 }
 
 test('Replications', function(t){
@@ -573,22 +572,18 @@ test('Replications', function(t){
   for(i = 0; i < n; i++)
     b.post({b:i});
 
-  pipe(b, a);
-  pipe2(a, c);
+  sync(a, b);
+  sync(a, c);
+
 
   //stress
   for(i = 0; i < 3; i++){
-    pipe2(a, d);
-    pipe2(b, d);
-    pipe2(c, d);
-    pipe2(d, d);
+    sync(a, d);
+    sync(b, d);
+    sync(c, d);
+    sync(d, d);
   }
 });
-
-function sync(client, server){
-  client.replicateStream().pipe(server.replicateStream());
-  server.replicateStream().pipe(client.replicateStream());
-}
 
 test('Replication causal ordering', function(t){
   t.plan(6);
