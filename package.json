@@ -27,6 +27,7 @@
   "dependencies": {
     "bytewise-core": "^1.2.3",
     "d64": "^1.0.0",
+    "event-stream": "^3.3.1",
     "extend": "^2.0.1",
     "ginga": "^1.0.0",
     "highland": "^2.5.1",

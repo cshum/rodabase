@@ -535,10 +535,10 @@ test('Rebuild Index', function(t){
 });
 
 function pipe(source, dest){
-  source.replicateStream().pipe(dest.replicateStream());
+  dest.replicateStream().pipe(source.replicateStream());
 }
 function pipe2(source, dest){
-  source.replicateStream().pipe(dest.replicateStream());
+  dest.replicateStream().pipe(source.replicateStream());
 }
 
 test('Replications', function(t){
