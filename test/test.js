@@ -629,14 +629,13 @@ test('Replication causal ordering', function(t){
       a.put('b1', data);
     });
     setTimeout(function(){
-      c.replicate()
-        .map(function(list){
-          //pipe to replicate stream in a reversed order
-          return list.reverse();
-        })
-        .flatten()
-        .ratelimit(1,300) //rate limit so that replicate hits not ready
-        .pipe(a.replicateStream());
+      var cr = c.replicate();
+      var ar = a.replicate();
+      cr
+      .pipe(H.pipeline(H.ratelimit(1,300)))
+      .pipe(ar)
+      .pipe(H.pipeline(H.ratelimit(1,300)))
+      .pipe(cr);
     }, 500);
   });
   var current = {};

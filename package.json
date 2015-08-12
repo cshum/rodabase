@@ -34,6 +34,7 @@
     "level-js": "^2.2.0",
     "level-transactions": "^1.2.0",
     "levelup": "^1.2.1",
+    "multiplex": "^6.2.2",
     "randombytes": "^2.0.1"
   },
   "devDependencies": {
