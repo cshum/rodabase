@@ -535,20 +535,10 @@ test('Rebuild Index', function(t){
 });
 
 function pipe(source, dest){
-  var stream = dest.clockStream()
-    .pipe(source.changesStream({ live: true }))
-    .pipe(dest.replicateStream());
+  source.replicateStream().pipe(dest.replicateStream());
 }
 function pipe2(source, dest){
-  var stream = dest.clockStream()
-    .pipe(source.changesStream({ live: true }))
-    .take(n)
-    .on('end', function(){
-      //simulate reconnection such that 
-      //clockStream triggered more than once
-      pipe(source, dest);
-    })
-    .pipe(dest.replicateStream());
+  source.replicateStream().pipe(dest.replicateStream());
 }
 
 test('Replications', function(t){
@@ -596,22 +586,17 @@ test('Replications', function(t){
 });
 
 function sync(client, server){
-  server.clockStream()
-    .pipe(client.changesStream({ live: true }))
-    .pipe(server.replicateStream());
-  client.clockStream()
-    .pipe(server.changesStream({ live: true }))
-    .pipe(client.replicateStream());
+  client.replicateStream().pipe(server.replicateStream());
+  server.replicateStream().pipe(client.replicateStream());
 }
 
 test('Replication causal ordering', function(t){
   t.plan(6);
 
   function pipe(source, dest, delay){
-    dest.clockStream()
-      .pipe(source.changesStream({ live: true }))
+    dest.replicateStream()
       .ratelimit(1, 50) //break debounce
-      .pipe(dest.replicateStream());
+      .pipe(source.replicateStream());
   }
 
   var a = roda('a3');
@@ -649,17 +634,14 @@ test('Replication causal ordering', function(t){
       a.put('b1', data);
     });
     setTimeout(function(){
-      c.clockStream()
-        .pipe(a.changesStream())
-        .take(6)
-        .collect()
+      c.replicate()
         .map(function(list){
           //pipe to replicate stream in a reversed order
           return list.reverse();
         })
         .flatten()
         .ratelimit(1,300) //rate limit so that replicate hits not ready
-        .pipe(c.replicateStream());
+        .pipe(a.replicateStream());
     }, 500);
   });
   var current = {};
