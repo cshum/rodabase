@@ -37,16 +37,15 @@ MIT
   - [.use('validate', [hook...])](#usevalidate-hook)
   - [.use('diff', [hook...])](#usediff-hook)
   - [.use('conflict', [hook...])](#useconflict-hook)
-- [Index](#index)
+- [Indexes](#indexes)
   - [.registerIndex(name, mapper)](#registerindexname-mapper)
   - [.rebuildIndex([tag], [cb])](#rebuildindextag-cb)
   - [.readStream([options])](#readstreamoptions)
   - [.getBy(index, key, [tx], [cb])](#getbyindex-key-tx-cb)
 - [Replication](#replication)
-  - [.liveStream()](#livestream)
-  - [.clockStream()](#clockstream)
-  - [.changesStream([options])](#changesstreamoptions)
   - [.replicateStream([options])](#replicatestreamoptions)
+- [Extras](#extras)
+  - [Special Fields](#special-fields)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -208,7 +207,7 @@ tx.commit(function(){
 #### .use('conflict', [hook...])
 
 
-### Index
+### Indexes
 
 Rodabase supports secondary indexes using mapper function. Indexes are calculated transactionally, results can be retrieved right after callback of a successful write.
 
@@ -370,6 +369,57 @@ The implementation loosely follows the **COPS-CD** approach as presented in the 
 * Keeping track of nearest gets-from dependency for each write.
 * Replication queue that commits write only when causal dependencies have been satisfied.
 
+#### .replicateStream([options])
+
+Rodabase exposes replication mechanism as Node.js duplex stream, which is transport-agnostic. 
+
+Example below shows a browser-server replication using [Shoe](https://github.com/substack/shoe) ([SockJS](https://github.com/sockjs/sockjs-node)).
+
+Browser:
+```js
+var shoe = require('shoe');
+
+var rodabase = require('rodabase');
+var roda = rodabase('db');
+var posts = roda('posts');
+
+var stream = shoe('/posts');
+var repl = posts.replicateStream();
+
+repl.pipe(stream).pipe(repl);
+
+//do stuffs
+posts.post({ hello: 'world' });
+posts.liveStream().each(...);
+
+```
+Server:
+```js
+var shoe = require('shoe');
+var http = require('http');
+
+var rodabase = require('rodabase');
+var roda = rodabase('./db');
+var posts = roda('posts');
+
+var server = http.createServer();
+server.listen(9999);
+
+var sock = shoe(function (stream) {
+  var repl = posts.replicateStream();
+  repl.pipe(stream).pipe(repl);
+});
+sock.install(server, '/posts');
+
+//do stuffs
+posts.post({ foo: 'bar' });
+posts.liveStream().each(...);
+```
+
+### Extras
+
+#### Special Fields
+
 Special fields are reserved of identifying states of documents:
 
 * `_rev` (revision) current revision of document that resembles a lamport clock. Consists of two parts: 
@@ -378,15 +428,3 @@ Special fields are reserved of identifying states of documents:
 * `_from` (gets from) nearest gets-from dependency. Generated on write operation from a replicated document.
 * `_after` (write after) `seq` of previous local write for keeping track of execution order.
 
-Rodabase exposes replication mechanism as Node.js stream, which is transport-agnostic:
-* [roda-socket.io](https://github.com/cshum/roda-socket.io) - Socket.IO transport.
-
-#### .replicateStream([options])
-
-```js
-//a replicate to b
-var ar = a.replicateStream();
-var br = b.replicateStream();
-
-a.pipe(b).pipe(a)
-```
