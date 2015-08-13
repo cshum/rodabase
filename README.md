@@ -381,14 +381,6 @@ Special fields are reserved of identifying states of documents:
 Rodabase exposes replication mechanism as Node.js stream, which is transport-agnostic:
 * [roda-socket.io](https://github.com/cshum/roda-socket.io) - Socket.IO transport.
 
-#### .liveStream()
-
-#### .clockStream()
-
-Readable stream of latest revisions i.e. lamport clocks of database section.
-
-#### .changesStream([options])
-
 #### .replicateStream([options])
 
 ```js
