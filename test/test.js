@@ -547,6 +547,15 @@ function sync(a, b){
 test('Replications', function(t){
   t.plan(3);
 
+  function sync(a, b){
+    var as = a.replicateStream();
+    var bs = b.replicateStream();
+    H(as.pipe(bs).pipe(as)).take(n * 2).done(function(){
+      //break it so that it triggers incremental updates
+      sync(a, b);
+    });
+  }
+
   var a = roda('a1');
   var b = roda('b1');
   var c = roda('c1');
