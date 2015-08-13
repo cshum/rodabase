@@ -739,7 +739,7 @@ test('gets from dependencies', function(t){
           'B gets from A no conflict'
         );
         t.ok(
-          codec.seqKey(data._rev) > codec.seqKey(bFrom), 
+          codec.seq(data._rev) > codec.seq(bFrom), 
           'B gets from A ordering'
         );
         var cFrom = data._rev;
@@ -754,7 +754,7 @@ test('gets from dependencies', function(t){
               'C gets from B no conflict'
             );
             t.ok(
-              codec.seqKey(data._rev) > codec.seqKey(cFrom), 
+              codec.seq(data._rev) > codec.seq(cFrom), 
               'C gets from B ordering'
             );
             t.end();
